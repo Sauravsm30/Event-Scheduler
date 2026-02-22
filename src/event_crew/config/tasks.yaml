@@ -1,56 +1,56 @@
 schedule_events:
   description: >
-    Using the provided event details: {{events}},
-    generate a conflict-free event schedule.
-    Do NOT invent new events or timings.
+    You have been provided with EXACTLY these events: {{events}}.
+    CRITICAL INSTRUCTION: You MUST ONLY schedule these exact events. DO NOT make up, create, or hallucinate ANY new events, names, or IDs under any circumstances.
+    If you cannot schedule all events, just schedule what you can and state that the rest failed.
   expected_output: >
-    A structured schedule mapping events to time slots.
+    A structured schedule mapping the provided events ONLY to time slots.
   agent: event_scheduler
   output_file: output/event_schedule.md
 
 allocate_venues:
   description: >
-    Assign venues from {{venues}} to the scheduled events.
-    Respect capacity, facilities, and availability.
-    Do NOT create new venues.
+    You have been provided with EXACTLY these venues: {{venues}}.
+    CRITICAL INSTRUCTION: Assign ONLY these existing venues to the scheduled events. Respect their capacities and availability.
+    DO NOT invent, fabricate, or create new venues under any circumstances. If an event cannot find a venue, mark it as un-venued.
   expected_output: >
-    Event-to-venue assignment.
+    Event-to-venue assignment mapping ONLY using existing provided venues.
   agent: venue_manager
   output_file: output/event_schedule.md
 
 assign_volunteers:
   description: >
-    Assign volunteers from {{volunteers}} to events.
-    Respect availability and workload.
-    Do NOT create new volunteers.
+    You have been provided with EXACTLY these volunteers: {{volunteers}}.
+    CRITICAL INSTRUCTION: Assign ONLY these existing volunteers to events. 
+    DO NOT invent, fabricate, or hallucinate new names, volunteers, or skills. If an event is understaffed, do not make up people to fill it.
   expected_output: >
-    Volunteer-to-event assignment.
+    Volunteer-to-event assignment mapping ONLY using existing provided volunteers.
   agent: volunteer_assigner
   output_file: output/event_schedule.md
 
 resolve_conflicts:
   description: >
     Identify and resolve conflicts in schedules, venues, or volunteers.
-    Use only the existing data.
+    CRITICAL INSTRUCTION: Use ONLY the existing data. Never resolve a conflict by inventing new resources.
   expected_output: >
-    A corrected, conflict-free plan.
+    A corrected plan using ONLY the explicitly provided input data.
   agent: conflict_resolver
   output_file: output/event_schedule.md
 
 adaptive_replanning:
   description: >
-    If changes occur, adjust only affected assignments
-    while minimizing disruption.
+    Adjust assignments if necessary, while minimizing disruption.
+    CRITICAL INSTRUCTION: You must strictly stick to the inputted data pool.
   expected_output: >
-    Updated schedule with explanation.
+    Updated schedule using only provided inputs.
   agent: adaptive_replanner
   output_file: output/event_schedule.md
 
 explain_decisions:
   description: >
-    Explain why each scheduling, venue, and volunteer decision was made
-    using the provided inputs.
+    Explain why each scheduling, venue, and volunteer decision was made.
+    Strictly base your explanation on the provided {{events}}, {{venues}}, and {{volunteers}}. Do not reference hallucinated data.
   expected_output: >
-    Human-readable explanations.
+    Human-readable explanations of the real schedule.
   agent: decision_explainer
   output_file: output/event_schedule.md
