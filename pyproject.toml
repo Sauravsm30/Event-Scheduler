@@ -7,7 +7,11 @@ requires-python = ">=3.10,<3.15"
 dependencies = [
     "crewai[tools]>=0.175.0,<1.0.0",
     "fastapi",
+    "passlib[bcrypt]>=1.7.4",
+    "pyjwt>=2.10.1",
     "pymysql>=1.1.2",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.22",
     "sqlalchemy>=2.0.46",
     "uvicorn",
 ]

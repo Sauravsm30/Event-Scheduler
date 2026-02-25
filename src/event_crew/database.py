@@ -25,6 +25,25 @@ class DBProgram(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+class DBUser(Base):
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True)
+    hashed_password = Column(String(255))
+    full_name = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class DBProgramUserRole(Base):
+    __tablename__ = "program_user_roles"
+
+    id = Column(String(36), primary_key=True, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True)
+    program_id = Column(String(36), ForeignKey("programs.id"), index=True)
+    role = Column(Enum('ORGANISER', 'COMMITTEE', 'VOLUNTEER', name='program_role_enum'), default='VOLUNTEER')
+
 class DBEvent(Base):
     __tablename__ = "events"
 
