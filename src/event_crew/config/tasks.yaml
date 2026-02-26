@@ -2,6 +2,7 @@ schedule_events:
   description: >
     You have been provided with EXACTLY these events: {{events}}.
     CRITICAL INSTRUCTION: You MUST ONLY schedule these exact events. DO NOT make up, create, or hallucinate ANY new events, names, or IDs under any circumstances.
+    If an event does not have a strict start_time or end_time, you are free to schedule it at ANY appropriate available time.
     If you cannot schedule all events, just schedule what you can and state that the rest failed.
   expected_output: >
     A structured schedule mapping the provided events ONLY to time slots.
@@ -12,6 +13,7 @@ allocate_venues:
   description: >
     You have been provided with EXACTLY these venues: {{venues}}.
     CRITICAL INSTRUCTION: Assign ONLY these existing venues to the scheduled events. Respect their capacities and availability.
+    If an event does not explicitly specify a 'preferred venue', you should automatically assume ANY available venue that fits the capacity requirements can be used.
     DO NOT invent, fabricate, or create new venues under any circumstances. If an event cannot find a venue, mark it as un-venued.
   expected_output: >
     Event-to-venue assignment mapping ONLY using existing provided venues.

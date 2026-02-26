@@ -33,6 +33,7 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import List, Optional
 import uuid
 import datetime
+import asyncio
 from sqlalchemy.orm import Session
 
 from event_crew.crew import EventCrew
@@ -396,8 +397,11 @@ async def add_venue(venue: VenueBase, db: Session = Depends(get_db), current_use
     return db_venue
 
 @app.get("/api/venues", response_model=List[Venue], tags=["Venues"])
-async def fetch_venues(db: Session = Depends(get_db)):
-    return db.query(DBVenue).all()
+async def fetch_venues(program_id: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(DBVenue)
+    if program_id:
+        query = query.filter(DBVenue.program_id == program_id)
+    return query.all()
 
 @app.get("/api/venues/{id}", response_model=Venue, tags=["Venues"])
 async def fetch_venue(id: str, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
@@ -488,6 +492,25 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
     venues = [Venue.model_validate(v).model_dump() for v in db.query(DBVenue).filter(DBVenue.program_id == program_id).all()]
     volunteers = [Volunteer.model_validate(vol).model_dump() for vol in db.query(DBVolunteer).filter(DBVolunteer.program_id == program_id).all()]
     
+    # If no explicit DBVolunteers exist, fetch users assigned as VOLUNTEER to this program.
+    if not volunteers:
+        volunteer_roles = db.query(DBProgramUserRole).filter(
+            DBProgramUserRole.program_id == program_id,
+            DBProgramUserRole.role == 'VOLUNTEER'
+        ).all()
+        if volunteer_roles:
+            user_ids = [r.user_id for r in volunteer_roles]
+            team_volunteers = db.query(DBUser).filter(DBUser.id.in_(user_ids)).all()
+            volunteers = [
+                {
+                    "id": u.id, 
+                    "name": u.full_name, 
+                    "skills": ["General Support"], 
+                    "availability": ["Anytime"]
+                } 
+                for u in team_volunteers
+            ]
+    
     inputs = {
         "events": events,
         "venues": venues,
@@ -498,8 +521,9 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=400, detail="No events to schedule")
 
     try:
-        # Run the crew
-        result = EventCrew().crew().kickoff(inputs=inputs)
+        # Run the crew in a separate thread so it doesn't block FastAPI
+        crew_instance = EventCrew().crew()
+        result = await asyncio.to_thread(crew_instance.kickoff, inputs=inputs)
         
         # Store schedule
         schedule_id = str(uuid.uuid4())

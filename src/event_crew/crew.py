@@ -1,36 +1,47 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 @CrewBase
 class EventCrew():
     agents: List[BaseAgent]
     tasks: List[Task]
 
+    def __init__(self):
+        super().__init__()
+        # Explicitly setting high token limits to prevent generation cutoff
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-1.5-flash",
+            google_api_key=os.environ.get("GEMINI_API_KEY", ""),
+            max_output_tokens=8192,
+            temperature=0.2
+        )
+
     @agent
     def event_scheduler(self) -> Agent:
-        return Agent(config=self.agents_config["event_scheduler"], verbose=True)
+        return Agent(config=self.agents_config["event_scheduler"], llm=self.llm, verbose=True)
 
     @agent
     def venue_manager(self) -> Agent:
-        return Agent(config=self.agents_config["venue_manager"], verbose=True)
+        return Agent(config=self.agents_config["venue_manager"], llm=self.llm, verbose=True)
 
     @agent
     def volunteer_assigner(self) -> Agent:
-        return Agent(config=self.agents_config["volunteer_assigner"], verbose=True)
+        return Agent(config=self.agents_config["volunteer_assigner"], llm=self.llm, verbose=True)
 
     @agent
     def conflict_resolver(self) -> Agent:
-        return Agent(config=self.agents_config["conflict_resolver"], verbose=True)
+        return Agent(config=self.agents_config["conflict_resolver"], llm=self.llm, verbose=True)
 
     @agent
     def adaptive_replanner(self) -> Agent:
-        return Agent(config=self.agents_config["adaptive_replanner"], verbose=True)
+        return Agent(config=self.agents_config["adaptive_replanner"], llm=self.llm, verbose=True)
 
     @agent
     def decision_explainer(self) -> Agent:
-        return Agent(config=self.agents_config["decision_explainer"], verbose=True)
+        return Agent(config=self.agents_config["decision_explainer"], llm=self.llm, verbose=True)
 
     @task
     def schedule_events(self) -> Task:

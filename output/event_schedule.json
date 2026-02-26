@@ -1,0 +1,20 @@
+{
+  "schedule": [
+    {
+      "event_id": "377695a2-7445-4607-9757-dc178fb3c137",
+      "name": "hackathon",
+      "venue": "CCF",
+      "volunteer": null,
+      "start_time": "09:00 AM",
+      "end_time": "01:00 PM" // Extended end time due to duration and number of expected participants. Adjusting start and end times as necessary for a conflict-free schedule.
+    },
+    {
+      "event_id": "92dd57e0-2980-4d7d-b18e-563a79d9db0b",
+      "name": "basketball",
+      "venue": null, // No venue found with this ID in the provided data. Leaving as unassigned and NULL for volunteer assignment due to lack of information about a specific basketball court facility other than 'projector' and 'computers', which does not match required facilities; also no capacity constraints mentioned hence scheduling at CCF is considered invalid because it conflicts with another event.
+      "volunteer": null, // No available volunteers provided in the input data structure to assign as per instructions. 
+      "start_time": "",
+      "end_time": ""
+    }
+  ]
+}

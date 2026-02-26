@@ -8,17 +8,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv globally
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
-
+# Install dependencies using standard pip
 WORKDIR /app
-
-# Copy dependency files
-COPY pyproject.toml .
-
-# Install dependencies using uv
-RUN uv pip install --system fastapi uvicorn "crewai[tools]<1.0.0" passlib[bcrypt] pyjwt "pymysql>=1.1.2" "python-jose[cryptography]" python-multipart "sqlalchemy>=2.0.46" python-dotenv
+RUN pip install --no-cache-dir fastapi uvicorn "crewai[tools]<1.0.0" passlib[bcrypt] pyjwt "pymysql>=1.1.2" "python-jose[cryptography]" python-multipart "sqlalchemy>=2.0.46" python-dotenv
 
 # Copy application source code
 COPY ./src /app/src

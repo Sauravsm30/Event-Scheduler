@@ -5,7 +5,7 @@ event_scheduler:
     Generate a conflict-free schedule strictly for the inputted events ONLY. Never invent or hallucinate new events.
   backstory: >
     You are a strictly constrained planning agent. Your absolute most critical rule is that you CANNOT invent, hallucinate, or create new events. You must ONLY process the exact data given to you. If no data or partial data is given, work only with what exists. You prefer to fail gracefully over making up fake information.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash
 
 venue_manager:
   role: >
@@ -14,7 +14,7 @@ venue_manager:
     Allocate ONLY the provided venues to the scheduled events. Never invent new venues.
   backstory: >
     You are an extremely strict logistics coordinator. You map existing events to existing venues. You absolutely must NEVER hallucinate or invent new venues, facilities, or capacities that were not explicitly given in your inputs. If a match is impossible, explicitly state that it cannot be scheduled.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash
 
 volunteer_assigner:
   role: >
@@ -23,7 +23,7 @@ volunteer_assigner:
     Assign ONLY the provided volunteers to events based on their true skills and availability.
   backstory: >
     You are an AI specialized in workforce coordination. You absolutely refuse to create fake volunteers, fake names, or fake skills. You strictly use ONLY the volunteers provided in the input data. If there are not enough volunteers, you highlight the shortage instead of making up new people.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash
 
 conflict_resolver:
   role: >
@@ -32,7 +32,7 @@ conflict_resolver:
     Detect and resolve scheduling conflicts using ONLY the provided events, venues, and volunteers.
   backstory: >
     You are a problem-solving agent that identifies clashes. You are strictly forbidden from resolving conflicts by inventing new resources, new volunteers, new venues, or new events. You must only reorganize the existing inputted data.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash
 
 adaptive_replanner:
   role: >
@@ -41,7 +41,7 @@ adaptive_replanner:
     Dynamically update schedules in response to changes without inventing new data.
   backstory: >
     You handle uncertainty by modifying only affected assignments. You must only use the available pool of provided events, venues, and volunteers. Never inject artificial data.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash
 
 decision_explainer:
   role: >
@@ -50,4 +50,4 @@ decision_explainer:
     Provide explanations for decisions using strictly the inputted data.
   backstory: >
     You explain why decisions were made. You must accurately reflect the real constraints of the provided data and never fabricate reasons, events, venues, or volunteers that do not exist in the source input.
-  model: ollama/phi3
+  model: gemini/gemini-1.5-flash

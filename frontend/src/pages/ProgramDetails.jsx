@@ -12,14 +12,21 @@ const ProgramDetails = () => {
     const [program, setProgram] = useState(null);
     const [events, setEvents] = useState([]);
     const [users, setUsers] = useState([]);
+    const [venues, setVenues] = useState([]);
     const [myRole, setMyRole] = useState('VOLUNTEER');
     const [schedule, setSchedule] = useState(null);
     const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
     const [showAddEvent, setShowAddEvent] = useState(false);
-    const [newEvent, setNewEvent] = useState({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General' });
+    const [newEvent, setNewEvent] = useState({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General', preferredVenueId: '' });
 
     const [showAddUser, setShowAddUser] = useState(false);
     const [newUser, setNewUser] = useState({ email: '', role: 'COMMITTEE' });
+
+    const [showAddVenue, setShowAddVenue] = useState(false);
+    const [newVenue, setNewVenue] = useState({ name: '', capacity: 0, facilities: '' });
+
+    // For editing events
+    const [editingEvent, setEditingEvent] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -38,6 +45,14 @@ const ProgramDetails = () => {
 
             const me = usersRes.data.find(u => u.id === user.id);
             if (me) setMyRole(me.role);
+
+            // Fetch Venues
+            try {
+                const venuesRes = await api.get(`/api/venues?program_id=${id}`);
+                setVenues(venuesRes.data);
+            } catch (err) {
+                console.error("Venues fetch error:", err);
+            }
 
             // Fetch schedule if it exists
             try {
@@ -61,12 +76,55 @@ const ProgramDetails = () => {
     const handleAddEvent = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/api/events', { ...newEvent, program_id: id });
+            const payload = { ...newEvent, program_id: id };
+            if (!payload.preferredVenueId) delete payload.preferredVenueId;
+
+            await api.post('/api/events', payload);
             setShowAddEvent(false);
-            setNewEvent({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General' });
+            setNewEvent({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General', preferredVenueId: '' });
             fetchData();
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleUpdateEvent = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = { ...editingEvent };
+            if (!payload.preferredVenueId) delete payload.preferredVenueId;
+
+            await api.put(`/api/events/${editingEvent.id}`, payload);
+            setEditingEvent(null);
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            alert("Error updating event.");
+        }
+    };
+
+    const handleAddVenue = async (e) => {
+        e.preventDefault();
+        try {
+            const facilitiesArray = newVenue.facilities.split(',').map(f => f.trim()).filter(f => f);
+            await api.post('/api/venues', { ...newVenue, facilities: facilitiesArray, program_id: id });
+            setShowAddVenue(false);
+            setNewVenue({ name: '', capacity: 0, facilities: '' });
+            fetchData();
+        } catch (err) {
+            console.error("Add Venue Error:", err);
+            alert("Error adding venue.");
+        }
+    };
+
+    const toggleVenueAvailability = async (venue) => {
+        try {
+            const endpoint = venue.isAvailable ? `/api/venues/${venue.id}/unavailable` : `/api/venues/${venue.id}/available`;
+            await api.put(endpoint);
+            fetchData();
+        } catch (err) {
+            console.error("Toggle Venue Error:", err);
+            alert("Error toggling venue availability.");
         }
     };
 
@@ -158,6 +216,15 @@ const ProgramDetails = () => {
                                 <label>Domain</label>
                                 <input required type="text" value={newEvent.domain} onChange={e => setNewEvent({ ...newEvent, domain: e.target.value })} placeholder="e.g. General" />
                             </div>
+                            <div>
+                                <label>Preferred Venue (Optional)</label>
+                                <select value={newEvent.preferredVenueId} onChange={e => setNewEvent({ ...newEvent, preferredVenueId: e.target.value })}>
+                                    <option value="">No Preference</option>
+                                    {venues.filter(v => v.isAvailable).map(v => (
+                                        <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity})</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowAddEvent(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Save Event</button>
@@ -173,17 +240,136 @@ const ProgramDetails = () => {
                         </div>
                     )}
                     {events.map(event => (
-                        <div key={event.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <h3 style={{ margin: 0 }}>{event.name}</h3>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={14} /> {event.duration} min</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Users size={14} /> {event.expectedParticipants} pax</span>
-                                    <span>Domain: {event.domain}</span>
+                        <div key={event.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {editingEvent?.id === event.id ? (
+                                <form onSubmit={handleUpdateEvent} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label>Event Name</label>
+                                        <input required type="text" value={editingEvent.name} onChange={e => setEditingEvent({ ...editingEvent, name: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label>Duration (min)</label>
+                                        <input required type="number" min="1" value={editingEvent.duration} onChange={e => setEditingEvent({ ...editingEvent, duration: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label>Expected Participants</label>
+                                        <input required type="number" min="0" value={editingEvent.expectedParticipants} onChange={e => setEditingEvent({ ...editingEvent, expectedParticipants: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label>Priority</label>
+                                        <input required type="number" min="1" value={editingEvent.priority} onChange={e => setEditingEvent({ ...editingEvent, priority: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label>Domain</label>
+                                        <input required type="text" value={editingEvent.domain} onChange={e => setEditingEvent({ ...editingEvent, domain: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label>Preferred Venue (Optional)</label>
+                                        <select value={editingEvent.preferredVenueId || ''} onChange={e => setEditingEvent({ ...editingEvent, preferredVenueId: e.target.value })}>
+                                            <option value="">No Preference</option>
+                                            {venues.filter(v => v.isAvailable || v.id === editingEvent.preferredVenueId).map(v => (
+                                                <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                        <button type="button" className="btn btn-secondary" onClick={() => setEditingEvent(null)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Update Event</button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0 }}>{event.name}</h3>
+                                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={14} /> {event.duration} min</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Users size={14} /> {event.expectedParticipants} pax</span>
+                                            <span>Domain: {event.domain}</span>
+                                            {event.preferredVenueId && venues.find(v => v.id === event.preferredVenueId) && (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--accent-color)' }}>
+                                                    <MapPin size={14} /> Pref: {venues.find(v => v.id === event.preferredVenueId).name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                        <div style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: '500' }}>
+                                            Priority: {event.priority}
+                                        </div>
+                                        {canManage && (
+                                            <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setEditingEvent(event)}>
+                                                Edit
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* VENUE MANAGEMENT */}
+                <hr style={{ border: 0, borderTop: '1px solid var(--border-color)', marginBottom: '2rem' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2>Venues</h2>
+                    {canManage && (
+                        <button className="btn btn-secondary" onClick={() => setShowAddVenue(!showAddVenue)}>
+                            <Plus size={18} /> Add Venue
+                        </button>
+                    )}
+                </div>
+
+                {showAddVenue && canManage && (
+                    <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--text-secondary)' }}>
+                        <h3>Add a New Venue</h3>
+                        <form onSubmit={handleAddVenue} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label>Venue Name</label>
+                                <input required type="text" value={newVenue.name} onChange={e => setNewVenue({ ...newVenue, name: e.target.value })} placeholder="e.g. Main Auditorium" />
                             </div>
-                            <div style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.9rem', fontWeight: '500' }}>
-                                Priority: {event.priority}
+                            <div>
+                                <label>Capacity</label>
+                                <input required type="number" min="1" value={newVenue.capacity} onChange={e => setNewVenue({ ...newVenue, capacity: parseInt(e.target.value) })} />
+                            </div>
+                            <div>
+                                <label>Facilities (Comma separated)</label>
+                                <input required type="text" value={newVenue.facilities} onChange={e => setNewVenue({ ...newVenue, facilities: e.target.value })} placeholder="Projector, WiFi, AC" />
+                            </div>
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddVenue(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Venue</button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '4rem' }}>
+                    {venues.length === 0 && !showAddVenue && (
+                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                            No venues added yet.
+                        </div>
+                    )}
+                    {venues.map(v => (
+                        <div key={v.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: v.isAvailable ? 1 : 0.6 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={16} /> {v.name}</h3>
+                                {canManage && (
+                                    <button
+                                        onClick={() => toggleVenueAvailability(v)}
+                                        style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 'bold', color: v.isAvailable ? 'var(--text-color)' : 'red' }}
+                                    >
+                                        {v.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                Capacity: {v.capacity} pax
+                            </div>
+                            <div style={{ fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
+                                {v.facilities.map((fac, idx) => (
+                                    <span key={idx} style={{ padding: '0.2rem 0.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{fac}</span>
+                                ))}
                             </div>
                         </div>
                     ))}
