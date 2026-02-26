@@ -393,11 +393,120 @@ const ProgramDetails = () => {
                 </div>
 
                 {schedule ? (
-                    <div className="card" style={{ marginBottom: '2rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflowX: 'auto', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ marginBottom: '2rem' }}>
                         <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                             Last generated: {new Date(schedule.timestamp).toLocaleString()}
                         </div>
-                        {schedule.data}
+                        {(() => {
+                            try {
+                                // Strip potential markdown code blocks returned by the AI
+                                const cleanData = schedule.data.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
+                                const parsedSchedule = JSON.parse(cleanData);
+                                // If successful, render the new UI cards
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        {parsedSchedule.schedule && parsedSchedule.schedule.length > 0 ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                {(() => {
+                                                    // Group events by date
+                                                    const groupedEvents = parsedSchedule.schedule.reduce((acc, item) => {
+                                                        const dateKey = item.date || 'Unscheduled';
+                                                        if (!acc[dateKey]) acc[dateKey] = [];
+                                                        acc[dateKey].push(item);
+                                                        return acc;
+                                                    }, {});
+
+                                                    // Sort dates chronologically
+                                                    const sortedDates = Object.keys(groupedEvents).sort((a, b) => {
+                                                        if (a === 'Unscheduled') return 1;
+                                                        if (b === 'Unscheduled') return -1;
+                                                        return new Date(a) - new Date(b);
+                                                    });
+
+                                                    return sortedDates.map(dateKey => (
+                                                        <div key={dateKey} className="date-group" style={{ marginBottom: '1.5rem' }}>
+                                                            <h3 style={{ borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <Calendar size={20} />
+                                                                {dateKey}
+                                                            </h3>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                                {groupedEvents[dateKey].map((item, index) => {
+                                                                    // Resolve IDs to full objects for display
+                                                                    const eventObj = events.find(e => e.id === item.event_id) || { name: 'Unknown Event' };
+                                                                    const venueObj = venues.find(v => v.id === item.scheduled_venue_id);
+                                                                    const vName = venueObj ? venueObj.name : 'Unknown Venue';
+
+                                                                    // Volunteers could be an array of IDs
+                                                                    const volIds = item.volunteer_ids || [];
+                                                                    const volNames = volIds.map(vid => {
+                                                                        const u = users.find(user => user.id === vid);
+                                                                        return u ? u.full_name : 'Unknown Volunteer';
+                                                                    }).join(', ');
+
+                                                                    // Format time to HH:mm (handling HH:mm or HH:mm:ss or ISO strings)
+                                                                    const formatTime = (timeStr) => {
+                                                                        if (!timeStr) return 'TBD';
+                                                                        const t = String(timeStr).trim();
+                                                                        // If it looks like HH:mm:ss... just take first 5 chars
+                                                                        if (/^\d{2}:\d{2}/.test(t)) return t.substring(0, 5);
+                                                                        return t;
+                                                                    };
+
+                                                                    return (
+                                                                        <div key={index} className="card" style={{ borderLeft: '4px solid var(--accent-color)', padding: '1.25rem' }}>
+                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                                                                <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>{eventObj.name}</h4>
+                                                                                <div style={{ backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                                                                    {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                    <MapPin size={16} />
+                                                                                    <span><strong>Venue:</strong> {vName}</span>
+                                                                                </div>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                    <Users size={16} />
+                                                                                    <span><strong>Team:</strong> {volNames || 'None assigned'}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        ) : (
+                                            <div style={{ padding: '1.5rem', textAlign: 'center', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
+                                                No events were successfully scheduled.
+                                            </div>
+                                        )}
+
+                                        {/* AI Explanations Box */}
+                                        {parsedSchedule.explanations && (
+                                            <div className="card" style={{ backgroundColor: 'var(--bg-color)', border: '1px solid var(--primary-color)', marginTop: '0.5rem' }}>
+                                                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    ✨ AI Scheduling Reasoning
+                                                </h4>
+                                                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', color: 'var(--text-color)' }}>
+                                                    {parsedSchedule.explanations}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            } catch (e) {
+                                // Fallback: If it's not valid JSON, just render it exactly as it used to be
+                                return (
+                                    <div className="card" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflowX: 'auto', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)' }}>
+                                        {schedule.data}
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 ) : (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginBottom: '2rem' }}>

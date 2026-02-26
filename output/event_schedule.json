@@ -1,20 +1,25 @@
+```json
 {
   "schedule": [
     {
       "event_id": "377695a2-7445-4607-9757-dc178fb3c137",
-      "name": "hackathon",
-      "venue": "CCF",
-      "volunteer": null,
-      "start_time": "09:00 AM",
-      "end_time": "01:00 PM" // Extended end time due to duration and number of expected participants. Adjusting start and end times as necessary for a conflict-free schedule.
+      "date": "2024-07-29",
+      "scheduled_venue_id": "389409ad-163c-4aee-8f27-0a4aeae44588",
+      "volunteer_ids": [
+        "95911f65-bc12-496c-b650-df8328cb0e8e"
+      ],
+      "start_time": "09:00:00Z",
+      "end_time": "10:00:00Z"
     },
     {
       "event_id": "92dd57e0-2980-4d7d-b18e-563a79d9db0b",
-      "name": "basketball",
-      "venue": null, // No venue found with this ID in the provided data. Leaving as unassigned and NULL for volunteer assignment due to lack of information about a specific basketball court facility other than 'projector' and 'computers', which does not match required facilities; also no capacity constraints mentioned hence scheduling at CCF is considered invalid because it conflicts with another event.
-      "volunteer": null, // No available volunteers provided in the input data structure to assign as per instructions. 
-      "start_time": "",
-      "end_time": ""
+      "date": "2024-07-29",
+      "scheduled_venue_id": "e8c050ed-69ed-4086-a67d-466e2fe312b7",
+      "volunteer_ids": [],
+      "start_time": "10:00:00Z",
+      "end_time": "11:00:00Z"
     }
-  ]
+  ],
+  "explanations": "The 'hackathon' event (ID: 377695a2-7445-4607-9757-dc178fb3c137) was scheduled for 60 minutes from 09:00:00Z to 10:00:00Z on 2024-07-29, matching its defined duration. It was assigned to 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) because 'CCF' was the preferred venue, had a capacity of 200 which is sufficient for the 100 expected participants, and provided necessary facilities like 'projector' and 'computers' suitable for a tech-domain event. The venue was also available. Volunteer 'test2' (ID: 95911f65-bc12-496c-b650-df8328cb0e8e) was assigned to the 'hackathon' event due to their 'General Support' skills and 'Anytime' availability.\n\nThe 'basketball' event (ID: 92dd57e0-2980-4d7d-b18e-563a79d9db0b) was scheduled for 60 minutes from 10:00:00Z to 11:00:00Z on 2024-07-29, matching its defined duration. It was assigned to the 'basketball court' (ID: e8c050ed-69ed-4086-a67d-466e2fe312b7) because it was the preferred venue, had a capacity of 100 which is sufficient for the 50 expected participants, and provided the necessary facility of 'basketball nets' suitable for a sports-domain event. The venue was also available. No volunteers were assigned to the 'basketball' event, as indicated by its presence in the unassigned events list for volunteers."
 }
+```

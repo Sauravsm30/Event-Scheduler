@@ -52,7 +52,8 @@ explain_decisions:
   description: >
     Explain why each scheduling, venue, and volunteer decision was made.
     Strictly base your explanation on the provided {{events}}, {{venues}}, and {{volunteers}}. Do not reference hallucinated data.
+    IMPORTANT: You must output a valid JSON object containing TWO keys: "schedule" (which is the final array of event JSON objects) and "explanations" (which is your string explanation of the decisions).
   expected_output: >
-    Human-readable explanations of the real schedule.
+    A strict JSON object in this format: {"schedule": [{"event_id": "...", "date": "YYYY-MM-DD", "scheduled_venue_id": "...", "volunteer_ids": ["..."], "start_time": "...", "end_time": "..."}], "explanations": "Your detailed explanation here."}
   agent: decision_explainer
-  output_file: output/event_schedule.md
+  output_file: output/event_schedule.json

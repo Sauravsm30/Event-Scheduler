@@ -1,9 +1,8 @@
-from crewai import Agent, Crew, Process, Task
+from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 @CrewBase
 class EventCrew():
@@ -12,15 +11,11 @@ class EventCrew():
 
     @property
     def llm(self):
-        # LiteLLM/CrewAI crashes if OPENAI_API_KEY is missing, even when using Gemini
-        os.environ["OPENAI_API_KEY"] = "dummy_key_to_bypass_litellm_check"
         os.environ["GEMINI_API_KEY"] = os.environ.get("GEMINI_API_KEY", "")
-        
-        # Explicitly setting high token limits to prevent generation cutoff
-        return ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash-latest",
+
+        return LLM(
+            model="gemini/gemini-2.5-flash",
             api_key=os.environ.get("GEMINI_API_KEY", ""),
-            max_output_tokens=8192,
             temperature=0.2
         )
 
