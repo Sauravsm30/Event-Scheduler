@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install dependencies using standard pip
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn "crewai[tools]<1.0.0" passlib[bcrypt] pyjwt "pymysql>=1.1.2" "python-jose[cryptography]" python-multipart "sqlalchemy>=2.0.46" python-dotenv
+RUN pip install --no-cache-dir fastapi uvicorn "crewai[tools]<1.0.0" passlib[bcrypt] pyjwt "pymysql>=1.1.2" "python-jose[cryptography]" python-multipart "sqlalchemy>=2.0.46" python-dotenv langchain-google-genai "numpy<2"
 
 # Copy application source code
 COPY ./src /app/src
