@@ -486,6 +486,20 @@ async def fetch_assignments(id: str, db: Session = Depends(get_db)):
 async def generate_schedule(program_id: str, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     # Ensure role is Organiser or Committee
     require_organiser_or_committee(program_id, current_user, db)
+    # Fetch program details to give agents constraint context
+    program_db = db.query(DBProgram).filter(DBProgram.id == program_id).first()
+    if not program_db:
+        raise HTTPException(status_code=404, detail="Program not found")
+        
+    program_details = {
+        "name": program_db.name,
+        "start_date": str(program_db.start_date),
+        "end_date": str(program_db.end_date),
+        "daily_start_time": str(program_db.daily_start_time) if program_db.daily_start_time else None,
+        "daily_end_time": str(program_db.daily_end_time) if program_db.daily_end_time else None,
+        "is_24_hour_event": program_db.is_24_hour_event,
+        "max_parallel_events": program_db.max_parallel_events
+    }
     
     # Prepare inputs for Crew specific to this program
     events = [Event.model_validate(e).model_dump() for e in db.query(DBEvent).filter(DBEvent.program_id == program_id).all()]
@@ -512,6 +526,7 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
             ]
     
     inputs = {
+        "program": program_details,
         "events": events,
         "venues": venues,
         "volunteers": volunteers

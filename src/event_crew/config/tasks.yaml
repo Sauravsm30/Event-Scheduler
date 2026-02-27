@@ -1,8 +1,9 @@
 schedule_events:
   description: >
     You have been provided with EXACTLY these events: {{events}}.
+    You have been provided with the following program details: {{program}}. CRITICAL INSTRUCTION: You MUST use the program's start_date and end_date as the boundary for all event scheduling.
     CRITICAL INSTRUCTION: You MUST ONLY schedule these exact events. DO NOT make up, create, or hallucinate ANY new events, names, or IDs under any circumstances.
-    If an event does not have a strict start_time or end_time, you are free to schedule it at ANY appropriate available time.
+    If an event does not have a strict start_time or end_time, you are free to schedule it at ANY appropriate available time within the program dates.
     If you cannot schedule all events, just schedule what you can and state that the rest failed.
   expected_output: >
     A structured schedule mapping the provided events ONLY to time slots.
@@ -51,7 +52,7 @@ adaptive_replanning:
 explain_decisions:
   description: >
     Explain why each scheduling, venue, and volunteer decision was made.
-    Strictly base your explanation on the provided {{events}}, {{venues}}, and {{volunteers}}. Do not reference hallucinated data.
+    Strictly base your explanation on the provided {{events}}, {{venues}}, {{volunteers}}, and {{program}} constraints. Do not reference hallucinated data.
     IMPORTANT: You must output a valid JSON object containing TWO keys: "schedule" (which is the final array of event JSON objects) and "explanations" (which is your string explanation of the decisions).
   expected_output: >
     A strict JSON object in this format: {"schedule": [{"event_id": "...", "date": "YYYY-MM-DD", "scheduled_venue_id": "...", "volunteer_ids": ["..."], "start_time": "...", "end_time": "..."}], "explanations": "Your detailed explanation here."}
