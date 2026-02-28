@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, UserPlus, Plus, Calendar, MapPin, Search, Users } from 'lucide-react';
+import { ArrowLeft, UserPlus, Plus, Calendar, MapPin, Search, Users, Crown, Award } from 'lucide-react';
 
 const ProgramDetails = () => {
     const { id } = useParams();
@@ -20,8 +20,27 @@ const ProgramDetails = () => {
     const [newEvent, setNewEvent] = useState({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General', preferredVenueId: '' });
 
     const [showAddUser, setShowAddUser] = useState(false);
-    const [newUser, setNewUser] = useState({ email: '', role: 'COMMITTEE' });
+    const [newUser, setNewUser] = useState({ email: '', role: 'VOLUNTEER' });
 
+    // Static list of vibrant colors to cycle through for profile pictures
+    const profileColors = [
+        '#ef4444', // red
+        '#f97316', // orange
+        '#f59e0b', // amber
+        '#10b981', // emerald
+        '#06b6d4', // cyan
+        '#3b82f6', // blue
+        '#8b5cf6', // violet
+        '#d946ef', // fuchsia
+        '#f43f5e'  // rose
+    ];
+
+    const rolesPriority = {
+        'ORGANISER': 3,
+        'COMMITTEE': 2,
+        'VOLUNTEER': 1,
+        'PARTICIPANT': 0
+    };
     const [showAddVenue, setShowAddVenue] = useState(false);
     const [newVenue, setNewVenue] = useState({ name: '', capacity: 0, facilities: '' });
 
@@ -402,6 +421,44 @@ const ProgramDetails = () => {
                                 // Strip potential markdown code blocks returned by the AI
                                 const cleanData = schedule.data.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
                                 const parsedSchedule = JSON.parse(cleanData);
+
+                                const renderExplanationHTML = (text) => {
+                                    if (!text) return { __html: '' };
+
+                                    let formatted = text;
+
+                                    // 1. Escape HTML FIRST so we don't accidentally escape our own generated tags later!
+                                    formatted = formatted
+                                        .replace(/&/g, "&amp;")
+                                        .replace(/</g, "&lt;")
+                                        .replace(/>/g, "&gt;");
+
+                                    // 2. Remove redundant (ID: ...) blocks entirely
+                                    formatted = formatted.replace(/\s*\(ID:\s*[^)]+\)/gi, '');
+
+                                    // 3. Replace any remaining naked UUIDs with actual names
+                                    const idToNameMap = {};
+                                    events.forEach(e => idToNameMap[e.id] = e.name);
+                                    venues.forEach(v => idToNameMap[v.id] = v.name);
+                                    users.forEach(u => idToNameMap[u.id] = u.full_name);
+
+                                    const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+                                    formatted = formatted.replace(uuidRegex, (match) => {
+                                        return idToNameMap[match] ? `<strong>${idToNameMap[match]}</strong>` : '';
+                                    });
+
+                                    // 4. Parse simple Markdown
+                                    formatted = formatted
+                                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                        // For bullets, replace ^* with a nice list item style
+                                        .replace(/^\s*\*\s+(.*)$/gm, '<div style="margin-left: 1.5rem; display: list-item;">$1</div>')
+                                        // Single asterisks for italics
+                                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                        .replace(/^#{1,6}\s+(.*)$/gm, '<strong>$1</strong>');
+
+                                    return { __html: formatted };
+                                };
+
                                 // If successful, render the new UI cards
                                 return (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -443,21 +500,46 @@ const ProgramDetails = () => {
                                                                         return u ? u.full_name : 'Unknown Volunteer';
                                                                     }).join(', ');
 
-                                                                    // Format time to HH:mm (handling HH:mm or HH:mm:ss or ISO strings)
-                                                                    const formatTime = (timeStr) => {
+                                                                    const formatDateTimeForPill = (timeStr, fallbackDateStr) => {
                                                                         if (!timeStr) return 'TBD';
                                                                         const t = String(timeStr).trim();
-                                                                        // If it looks like HH:mm:ss... just take first 5 chars
-                                                                        if (/^\d{2}:\d{2}/.test(t)) return t.substring(0, 5);
-                                                                        return t;
+
+                                                                        let dObj = new Date(t);
+                                                                        if (!isNaN(dObj) && t.includes('-')) {
+                                                                            const hrs = String(dObj.getHours()).padStart(2, '0');
+                                                                            const mins = String(dObj.getMinutes()).padStart(2, '0');
+                                                                            const dateStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                                                            return `${hrs}:${mins} (${dateStr})`;
+                                                                        }
+
+                                                                        let timePart = t;
+                                                                        if (/^\d{2}:\d{2}/.test(t)) timePart = t.substring(0, 5);
+
+                                                                        if (fallbackDateStr && fallbackDateStr !== 'Unscheduled') {
+                                                                            const fallObj = new Date(fallbackDateStr);
+                                                                            if (!isNaN(fallObj)) {
+                                                                                const dateStr = fallObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                                                                return `${timePart} (${dateStr})`;
+                                                                            }
+                                                                            return `${timePart} (${fallbackDateStr})`;
+                                                                        }
+                                                                        return timePart;
                                                                     };
 
+                                                                    const eventGradients = [
+                                                                        'linear-gradient(135deg, rgba(254, 242, 242, 0.05) 0%, rgba(254, 226, 226, 0.05) 100%)', // subtle dark red
+                                                                        'linear-gradient(135deg, rgba(239, 246, 255, 0.05) 0%, rgba(219, 234, 254, 0.05) 100%)', // subtle dark blue
+                                                                        'linear-gradient(135deg, rgba(240, 253, 244, 0.05) 0%, rgba(220, 252, 231, 0.05) 100%)', // subtle dark green
+                                                                        'linear-gradient(135deg, rgba(255, 251, 235, 0.05) 0%, rgba(254, 243, 199, 0.05) 100%)', // subtle dark yellow
+                                                                        'linear-gradient(135deg, rgba(250, 245, 255, 0.05) 0%, rgba(243, 232, 255, 0.05) 100%)'  // subtle dark purple
+                                                                    ];
+
                                                                     return (
-                                                                        <div key={index} className="card" style={{ borderLeft: '4px solid var(--accent-color)', padding: '1.25rem' }}>
+                                                                        <div key={index} className="card" style={{ background: eventGradients[index % eventGradients.length], borderLeft: '4px solid var(--accent-color)', padding: '1.25rem' }}>
                                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                                                                 <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>{eventObj.name}</h4>
                                                                                 <div style={{ backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                                                                                    {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                                                                                    {formatDateTimeForPill(item.start_time, dateKey)} - {formatDateTimeForPill(item.end_time, dateKey)}
                                                                                 </div>
                                                                             </div>
 
@@ -491,9 +573,10 @@ const ProgramDetails = () => {
                                                 <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     ✨ AI Scheduling Reasoning
                                                 </h4>
-                                                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', color: 'var(--text-color)' }}>
-                                                    {parsedSchedule.explanations}
-                                                </p>
+                                                <p
+                                                    style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', whiteSpace: 'pre-wrap', color: 'var(--text-color)' }}
+                                                    dangerouslySetInnerHTML={renderExplanationHTML(parsedSchedule.explanations)}
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -551,13 +634,17 @@ const ProgramDetails = () => {
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                    {users.map(u => (
+                    {users.map((u, index) => (
                         <div key={u.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--accent-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: profileColors[index % profileColors.length], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                                 {u.full_name.charAt(0).toUpperCase()}
                             </div>
                             <div style={{ overflow: 'hidden' }}>
-                                <h4 style={{ margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{u.full_name}</h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <h4 style={{ margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{u.full_name}</h4>
+                                    {u.role === 'ORGANISER' && <Crown size={16} color="#fbbf24" fill="rgba(251, 191, 36, 0.2)" title="Organiser" />}
+                                    {u.role === 'COMMITTEE' && <Award size={16} color="#60a5fa" title="Committee Member" />}
+                                </div>
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{u.email}</div>
                                 <div style={{ color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: 'bold', marginTop: '0.25rem' }}>{u.role}</div>
                             </div>

@@ -33,6 +33,7 @@ class DBUser(Base):
     hashed_password = Column(String(255))
     full_name = Column(String(255))
     is_active = Column(Boolean, default=True)
+    skills = Column(JSON, nullable=True) # or default=[]
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

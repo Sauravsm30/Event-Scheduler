@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, Plus, Calendar, Users } from 'lucide-react';
+import { LogOut, Plus, Calendar, Users, User } from 'lucide-react';
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -43,7 +43,10 @@ const Dashboard = () => {
                     <div className="brand">EventHub</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>Welcome, <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{user?.full_name}</span></span>
-                        <button className="btn btn-secondary" onClick={() => logout()} style={{ border: 'none' }}>
+                        <button className="btn btn-secondary" onClick={() => navigate('/profile')} style={{ border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <User size={18} /> Profile
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => logout()} style={{ border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <LogOut size={18} /> Logout
                         </button>
                     </div>

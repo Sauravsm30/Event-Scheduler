@@ -5,8 +5,8 @@
   --bg-surface: #161b22;
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --accent-color: #6366f1; /* Indigo */
-  --accent-hover: #4f46e5;
+  --accent-color: #ffffff;
+  --accent-hover: #d1d5db;
   --border-color: #30363d;
   --danger-color: #ef4444;
   --success-color: #10b981;
@@ -64,12 +64,13 @@ body {
 
 .btn-primary {
   background-color: var(--accent-color);
-  color: white;
+  color: var(--bg-color);
+  /* Dark text on white button for contrast */
 }
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
@@ -79,14 +80,17 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.05);
   border-color: var(--text-secondary);
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+  /* Slightly lighter dark background for inputs */
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-primary);
@@ -95,10 +99,12 @@ input, textarea, select {
   transition: border-color 0.2s;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Base layouts */
@@ -108,7 +114,7 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: radial-gradient(circle at top right, #1a1b4b 0%, var(--bg-color) 40%);
+  background-color: var(--bg-surface);
 }
 
 .dashboard-layout {
@@ -120,7 +126,7 @@ input:focus, textarea:focus, select:focus {
 .navbar {
   height: 70px;
   border-bottom: 1px solid var(--border-color);
-  background-color: rgba(22, 27, 34, 0.8);
+  background-color: rgba(22, 27, 34, 0.9);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -139,9 +145,7 @@ input:focus, textarea:focus, select:focus {
 .brand {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(to right, #818cf8, #c084fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-color);
 }
 
 .main-content {
@@ -150,7 +154,10 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* Typography elements */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   margin-bottom: 0.75rem;
   color: var(--text-primary);
 }

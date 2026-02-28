@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import ProgramDetails from './pages/ProgramDetails';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -21,6 +22,11 @@ function App() {
           <Route path="/programs/:id" element={
             <ProtectedRoute>
               <ProgramDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" />} />

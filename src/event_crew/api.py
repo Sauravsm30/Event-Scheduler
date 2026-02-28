@@ -59,12 +59,14 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: str
+    skills: Optional[List[str]] = []
 
 class UserResponse(BaseModel):
     id: str
     email: str
     full_name: str
     is_active: bool
+    skills: Optional[List[str]] = []
     model_config = ConfigDict(from_attributes=True)
 
 class Token(BaseModel):
@@ -187,7 +189,7 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     
     new_id = str(uuid.uuid4())
     hashed_password = get_password_hash(user.password)
-    db_user = DBUser(id=new_id, email=user.email, hashed_password=hashed_password, full_name=user.full_name)
+    db_user = DBUser(id=new_id, email=user.email, hashed_password=hashed_password, full_name=user.full_name, skills=user.skills)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -207,6 +209,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
 @app.get("/api/auth/me", response_model=UserResponse, tags=["Auth"])
 async def read_users_me(current_user: DBUser = Depends(get_current_user)):
+    return current_user
+
+class UserSkillsUpdate(BaseModel):
+    skills: List[str]
+
+@app.patch("/api/users/me/skills", response_model=UserResponse, tags=["Auth"])
+async def update_my_skills(skills_data: UserSkillsUpdate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    current_user.skills = skills_data.skills
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 # Program APIs
@@ -519,7 +531,7 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
                 {
                     "id": u.id, 
                     "name": u.full_name, 
-                    "skills": ["General Support"], 
+                    "skills": u.skills if u.skills else ["General Support"], 
                     "availability": ["Anytime"]
                 } 
                 for u in team_volunteers
