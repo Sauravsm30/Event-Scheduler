@@ -16,11 +16,12 @@ const ProgramDetails = () => {
     const [myRole, setMyRole] = useState('VOLUNTEER');
     const [schedule, setSchedule] = useState(null);
     const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
+    const [showMyDutiesOnly, setShowMyDutiesOnly] = useState(false);
     const [showAddEvent, setShowAddEvent] = useState(false);
     const [newEvent, setNewEvent] = useState({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General', preferredVenueId: '' });
 
     const [showAddUser, setShowAddUser] = useState(false);
-    const [newUser, setNewUser] = useState({ email: '', role: 'VOLUNTEER' });
+    const [newUser, setNewUser] = useState({ email: '', role: 'COMMITTEE' });
 
     // Static list of vibrant colors to cycle through for profile pictures
     const profileColors = [
@@ -201,204 +202,211 @@ const ProgramDetails = () => {
 
             <main className="main-content container">
 
-                {/* EVENT MANAGEMENT */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '1rem' }}>
-                    <h2>Events Schedule</h2>
-                    {canManage && (
-                        <button className="btn btn-primary" onClick={() => setShowAddEvent(!showAddEvent)}>
-                            <Plus size={18} /> Add Event
-                        </button>
-                    )}
-                </div>
-
-                {showAddEvent && canManage && (
-                    <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-color)' }}>
-                        <h3>Create a New Event</h3>
-                        <form onSubmit={handleAddEvent} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label>Event Name</label>
-                                <input required type="text" value={newEvent.name} onChange={e => setNewEvent({ ...newEvent, name: e.target.value })} placeholder="e.g. Opening Keynote" />
-                            </div>
-                            <div>
-                                <label>Duration (minutes)</label>
-                                <input required type="number" min="1" value={newEvent.duration} onChange={e => setNewEvent({ ...newEvent, duration: parseInt(e.target.value) })} />
-                            </div>
-                            <div>
-                                <label>Expected Participants</label>
-                                <input required type="number" min="0" value={newEvent.expectedParticipants} onChange={e => setNewEvent({ ...newEvent, expectedParticipants: parseInt(e.target.value) })} />
-                            </div>
-                            <div>
-                                <label>Priority</label>
-                                <input required type="number" min="1" value={newEvent.priority} onChange={e => setNewEvent({ ...newEvent, priority: parseInt(e.target.value) })} />
-                            </div>
-                            <div>
-                                <label>Domain</label>
-                                <input required type="text" value={newEvent.domain} onChange={e => setNewEvent({ ...newEvent, domain: e.target.value })} placeholder="e.g. General" />
-                            </div>
-                            <div>
-                                <label>Preferred Venue (Optional)</label>
-                                <select value={newEvent.preferredVenueId} onChange={e => setNewEvent({ ...newEvent, preferredVenueId: e.target.value })}>
-                                    <option value="">No Preference</option>
-                                    {venues.filter(v => v.isAvailable).map(v => (
-                                        <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddEvent(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Save Event</button>
-                            </div>
-                        </form>
-                    </div>
-                )}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '4rem' }}>
-                    {events.length === 0 && !showAddEvent && (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '12px' }}>
-                            <p>No events scheduled yet.</p>
+                {canManage && (
+                    <>
+                        {/* EVENT MANAGEMENT */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '1rem' }}>
+                            <h2>Events Schedule</h2>
+                            <button className="btn btn-primary" onClick={() => setShowAddEvent(!showAddEvent)}>
+                                <Plus size={18} /> Add Event
+                            </button>
                         </div>
-                    )}
-                    {events.map(event => (
-                        <div key={event.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {editingEvent?.id === event.id ? (
-                                <form onSubmit={handleUpdateEvent} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+                        {showAddEvent && (
+                            <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-color)' }}>
+                                <h3>Create a New Event</h3>
+                                <form onSubmit={handleAddEvent} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
                                     <div style={{ gridColumn: '1 / -1' }}>
                                         <label>Event Name</label>
-                                        <input required type="text" value={editingEvent.name} onChange={e => setEditingEvent({ ...editingEvent, name: e.target.value })} />
+                                        <input required type="text" value={newEvent.name} onChange={e => setNewEvent({ ...newEvent, name: e.target.value })} placeholder="e.g. Opening Keynote" />
                                     </div>
                                     <div>
-                                        <label>Duration (min)</label>
-                                        <input required type="number" min="1" value={editingEvent.duration} onChange={e => setEditingEvent({ ...editingEvent, duration: parseInt(e.target.value) })} />
+                                        <label>Duration (minutes)</label>
+                                        <input required type="number" min="1" value={newEvent.duration} onChange={e => setNewEvent({ ...newEvent, duration: parseInt(e.target.value) })} />
                                     </div>
                                     <div>
                                         <label>Expected Participants</label>
-                                        <input required type="number" min="0" value={editingEvent.expectedParticipants} onChange={e => setEditingEvent({ ...editingEvent, expectedParticipants: parseInt(e.target.value) })} />
+                                        <input required type="number" min="0" value={newEvent.expectedParticipants} onChange={e => setNewEvent({ ...newEvent, expectedParticipants: parseInt(e.target.value) })} />
                                     </div>
                                     <div>
                                         <label>Priority</label>
-                                        <input required type="number" min="1" value={editingEvent.priority} onChange={e => setEditingEvent({ ...editingEvent, priority: parseInt(e.target.value) })} />
+                                        <input required type="number" min="1" value={newEvent.priority} onChange={e => setNewEvent({ ...newEvent, priority: parseInt(e.target.value) })} />
                                     </div>
                                     <div>
                                         <label>Domain</label>
-                                        <input required type="text" value={editingEvent.domain} onChange={e => setEditingEvent({ ...editingEvent, domain: e.target.value })} />
+                                        <input required type="text" value={newEvent.domain} onChange={e => setNewEvent({ ...newEvent, domain: e.target.value })} placeholder="e.g. General" />
                                     </div>
                                     <div>
                                         <label>Preferred Venue (Optional)</label>
-                                        <select value={editingEvent.preferredVenueId || ''} onChange={e => setEditingEvent({ ...editingEvent, preferredVenueId: e.target.value })}>
+                                        <select value={newEvent.preferredVenueId} onChange={e => setNewEvent({ ...newEvent, preferredVenueId: e.target.value })}>
                                             <option value="">No Preference</option>
-                                            {venues.filter(v => v.isAvailable || v.id === editingEvent.preferredVenueId).map(v => (
+                                            {venues.filter(v => v.isAvailable).map(v => (
                                                 <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity})</option>
                                             ))}
                                         </select>
                                     </div>
                                     <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                                        <button type="button" className="btn btn-secondary" onClick={() => setEditingEvent(null)}>Cancel</button>
-                                        <button type="submit" className="btn btn-primary">Update Event</button>
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddEvent(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Save Event</button>
                                     </div>
                                 </form>
-                            ) : (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <h3 style={{ margin: 0 }}>{event.name}</h3>
-                                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', flexWrap: 'wrap' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={14} /> {event.duration} min</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Users size={14} /> {event.expectedParticipants} pax</span>
-                                            <span>Domain: {event.domain}</span>
-                                            {event.preferredVenueId && venues.find(v => v.id === event.preferredVenueId) && (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--accent-color)' }}>
-                                                    <MapPin size={14} /> Pref: {venues.find(v => v.id === event.preferredVenueId).name}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                                        <div style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: '500' }}>
-                                            Priority: {event.priority}
-                                        </div>
-                                        {canManage && (
-                                            <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setEditingEvent(event)}>
-                                                Edit
-                                            </button>
-                                        )}
-                                    </div>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '4rem' }}>
+                            {events.length === 0 && !showAddEvent && (
+                                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '12px' }}>
+                                    <p>No events scheduled yet.</p>
                                 </div>
                             )}
+                            {events.map(event => (
+                                <div key={event.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {editingEvent?.id === event.id ? (
+                                        <form onSubmit={handleUpdateEvent} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div style={{ gridColumn: '1 / -1' }}>
+                                                <label>Event Name</label>
+                                                <input required type="text" value={editingEvent.name} onChange={e => setEditingEvent({ ...editingEvent, name: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label>Duration (min)</label>
+                                                <input required type="number" min="1" value={editingEvent.duration} onChange={e => setEditingEvent({ ...editingEvent, duration: parseInt(e.target.value) })} />
+                                            </div>
+                                            <div>
+                                                <label>Expected Participants</label>
+                                                <input required type="number" min="0" value={editingEvent.expectedParticipants} onChange={e => setEditingEvent({ ...editingEvent, expectedParticipants: parseInt(e.target.value) })} />
+                                            </div>
+                                            <div>
+                                                <label>Priority</label>
+                                                <input required type="number" min="1" value={editingEvent.priority} onChange={e => setEditingEvent({ ...editingEvent, priority: parseInt(e.target.value) })} />
+                                            </div>
+                                            <div>
+                                                <label>Domain</label>
+                                                <input required type="text" value={editingEvent.domain} onChange={e => setEditingEvent({ ...editingEvent, domain: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label>Preferred Venue (Optional)</label>
+                                                <select value={editingEvent.preferredVenueId || ''} onChange={e => setEditingEvent({ ...editingEvent, preferredVenueId: e.target.value })}>
+                                                    <option value="">No Preference</option>
+                                                    {venues.filter(v => v.isAvailable || v.id === editingEvent.preferredVenueId).map(v => (
+                                                        <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                                <button type="button" className="btn btn-secondary" onClick={() => setEditingEvent(null)}>Cancel</button>
+                                                <button type="submit" className="btn btn-primary">Update Event</button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0 }}>{event.name}</h3>
+                                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', flexWrap: 'wrap' }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={14} /> {event.duration} min</span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Users size={14} /> {event.expectedParticipants} pax</span>
+                                                    <span>Domain: {event.domain}</span>
+                                                    {event.preferredVenueId && venues.find(v => v.id === event.preferredVenueId) && (
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--accent-color)' }}>
+                                                            <MapPin size={14} /> Pref: {venues.find(v => v.id === event.preferredVenueId).name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                                <div style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: '500' }}>
+                                                    Priority: {event.priority}
+                                                </div>
+                                                <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setEditingEvent(event)}>
+                                                    Edit
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                {/* VENUE MANAGEMENT */}
-                <hr style={{ border: 0, borderTop: '1px solid var(--border-color)', marginBottom: '2rem' }} />
+                        {/* VENUE MANAGEMENT */}
+                        <hr style={{ border: 0, borderTop: '1px solid var(--border-color)', marginBottom: '2rem' }} />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2>Venues</h2>
-                    {canManage && (
-                        <button className="btn btn-secondary" onClick={() => setShowAddVenue(!showAddVenue)}>
-                            <Plus size={18} /> Add Venue
-                        </button>
-                    )}
-                </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2>Venues</h2>
+                            <button className="btn btn-secondary" onClick={() => setShowAddVenue(!showAddVenue)}>
+                                <Plus size={18} /> Add Venue
+                            </button>
+                        </div>
 
-                {showAddVenue && canManage && (
-                    <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--text-secondary)' }}>
-                        <h3>Add a New Venue</h3>
-                        <form onSubmit={handleAddVenue} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label>Venue Name</label>
-                                <input required type="text" value={newVenue.name} onChange={e => setNewVenue({ ...newVenue, name: e.target.value })} placeholder="e.g. Main Auditorium" />
+                        {showAddVenue && (
+                            <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--text-secondary)' }}>
+                                <h3>Add a New Venue</h3>
+                                <form onSubmit={handleAddVenue} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label>Venue Name</label>
+                                        <input required type="text" value={newVenue.name} onChange={e => setNewVenue({ ...newVenue, name: e.target.value })} placeholder="e.g. Main Auditorium" />
+                                    </div>
+                                    <div>
+                                        <label>Capacity</label>
+                                        <input required type="number" min="1" value={newVenue.capacity} onChange={e => setNewVenue({ ...newVenue, capacity: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label>Facilities (Comma separated)</label>
+                                        <input required type="text" value={newVenue.facilities} onChange={e => setNewVenue({ ...newVenue, facilities: e.target.value })} placeholder="Projector, WiFi, AC" />
+                                    </div>
+                                    <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddVenue(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Save Venue</button>
+                                    </div>
+                                </form>
                             </div>
-                            <div>
-                                <label>Capacity</label>
-                                <input required type="number" min="1" value={newVenue.capacity} onChange={e => setNewVenue({ ...newVenue, capacity: parseInt(e.target.value) })} />
-                            </div>
-                            <div>
-                                <label>Facilities (Comma separated)</label>
-                                <input required type="text" value={newVenue.facilities} onChange={e => setNewVenue({ ...newVenue, facilities: e.target.value })} placeholder="Projector, WiFi, AC" />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddVenue(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Save Venue</button>
-                            </div>
-                        </form>
-                    </div>
+                        )}
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '4rem' }}>
+                            {venues.length === 0 && !showAddVenue && (
+                                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    No venues added yet.
+                                </div>
+                            )}
+                            {venues.map(v => (
+                                <div key={v.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: v.isAvailable ? 1 : 0.6 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={16} /> {v.name}</h3>
+                                        <button
+                                            onClick={() => toggleVenueAvailability(v)}
+                                            style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 'bold', color: v.isAvailable ? 'var(--text-color)' : 'red' }}
+                                        >
+                                            {v.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
+                                        </button>
+                                    </div>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                        Capacity: {v.capacity} pax
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
+                                        {v.facilities.map((fac, idx) => (
+                                            <span key={idx} style={{ padding: '0.2rem 0.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{fac}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* SCHEDULE MANAGEMENT */}
+                        <hr style={{ border: 0, borderTop: '1px solid var(--border-color)', marginBottom: '2rem', marginTop: '2rem' }} />
+                    </>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '4rem' }}>
-                    {venues.length === 0 && !showAddVenue && (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                            No venues added yet.
-                        </div>
-                    )}
-                    {venues.map(v => (
-                        <div key={v.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: v.isAvailable ? 1 : 0.6 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={16} /> {v.name}</h3>
-                                {canManage && (
-                                    <button
-                                        onClick={() => toggleVenueAvailability(v)}
-                                        style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 'bold', color: v.isAvailable ? 'var(--text-color)' : 'red' }}
-                                    >
-                                        {v.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
-                                    </button>
-                                )}
-                            </div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                Capacity: {v.capacity} pax
-                            </div>
-                            <div style={{ fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
-                                {v.facilities.map((fac, idx) => (
-                                    <span key={idx} style={{ padding: '0.2rem 0.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{fac}</span>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* SCHEDULE MANAGEMENT */}
-                <hr style={{ border: 0, borderTop: '1px solid var(--border-color)', marginBottom: '2rem' }} />
-
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2>Program Schedule & Duties</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <h2 style={{ margin: 0 }}>Program Schedule & Duties</h2>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            <input
+                                type="checkbox"
+                                checked={showMyDutiesOnly}
+                                onChange={(e) => setShowMyDutiesOnly(e.target.checked)}
+                                style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
+                            />
+                            Show My Duties Only
+                        </label>
+                    </div>
                     {canManage && (
                         <button
                             className="btn btn-primary"
@@ -465,13 +473,26 @@ const ProgramDetails = () => {
                                         {parsedSchedule.schedule && parsedSchedule.schedule.length > 0 ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 {(() => {
-                                                    // Group events by date
+                                                    // Group events by date, filtering if showMyDutiesOnly is true
                                                     const groupedEvents = parsedSchedule.schedule.reduce((acc, item) => {
+                                                        if (showMyDutiesOnly) {
+                                                            const volIds = item.volunteer_ids || [];
+                                                            if (!volIds.includes(user.id)) return acc;
+                                                        }
+
                                                         const dateKey = item.date || 'Unscheduled';
                                                         if (!acc[dateKey]) acc[dateKey] = [];
                                                         acc[dateKey].push(item);
                                                         return acc;
                                                     }, {});
+
+                                                    if (Object.keys(groupedEvents).length === 0) {
+                                                        return (
+                                                            <div style={{ padding: '1.5rem', textAlign: 'center', backgroundColor: 'var(--bg-color)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                                                                {showMyDutiesOnly ? "You have no events assigned in this schedule." : "No events are present in this schedule."}
+                                                            </div>
+                                                        );
+                                                    }
 
                                                     // Sort dates chronologically
                                                     const sortedDates = Object.keys(groupedEvents).sort((a, b) => {
@@ -534,8 +555,16 @@ const ProgramDetails = () => {
                                                                         'linear-gradient(135deg, rgba(250, 245, 255, 0.05) 0%, rgba(243, 232, 255, 0.05) 100%)'  // subtle dark purple
                                                                     ];
 
+                                                                    const eventBorderColors = [
+                                                                        '#ef4444', // red
+                                                                        '#3b82f6', // blue
+                                                                        '#10b981', // green
+                                                                        '#f59e0b', // yellow
+                                                                        '#8b5cf6'  // purple
+                                                                    ];
+
                                                                     return (
-                                                                        <div key={index} className="card" style={{ background: eventGradients[index % eventGradients.length], borderLeft: '4px solid var(--accent-color)', padding: '1.25rem' }}>
+                                                                        <div key={index} className="card" style={{ background: eventGradients[index % eventGradients.length], borderLeft: `4px solid ${eventBorderColors[index % eventBorderColors.length]}`, padding: '1.25rem' }}>
                                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                                                                 <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>{eventObj.name}</h4>
                                                                                 <div style={{ backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
