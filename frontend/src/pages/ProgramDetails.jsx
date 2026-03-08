@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, UserPlus, Plus, Calendar, MapPin, Search, Users, Crown, Award } from 'lucide-react';
+import { ArrowLeft, UserPlus, Plus, Calendar, MapPin, Search, Users, Crown, Award, X } from 'lucide-react';
 
 const ProgramDetails = () => {
     const { id } = useParams();
@@ -16,9 +16,16 @@ const ProgramDetails = () => {
     const [myRole, setMyRole] = useState('VOLUNTEER');
     const [schedule, setSchedule] = useState(null);
     const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
+    const [humanPrompt, setHumanPrompt] = useState("");
     const [showMyDutiesOnly, setShowMyDutiesOnly] = useState(false);
     const [showAddEvent, setShowAddEvent] = useState(false);
     const [newEvent, setNewEvent] = useState({ name: '', duration: 60, expectedParticipants: 0, priority: 1, domain: 'General', preferredVenueId: '' });
+
+    // Browse Users states
+    const [showBrowseUsers, setShowBrowseUsers] = useState(false);
+    const [browseUsers, setBrowseUsers] = useState([]);
+    const [browsePage, setBrowsePage] = useState(0);
+    const [hasMoreUsers, setHasMoreUsers] = useState(true);
 
     const [showAddUser, setShowAddUser] = useState(false);
     const [newUser, setNewUser] = useState({ email: '', role: 'COMMITTEE' });
@@ -151,9 +158,10 @@ const ProgramDetails = () => {
     const handleGenerateSchedule = async () => {
         setIsGeneratingSchedule(true);
         try {
-            await api.post(`/api/schedule/generate/${id}`);
+            await api.post(`/api/schedule/generate/${id}`, { human_prompt: humanPrompt });
             const schedRes = await api.get(`/api/schedule/program/${id}`);
             setSchedule(schedRes.data);
+            setHumanPrompt(""); // clear prompt after generating
         } catch (err) {
             console.error(err);
             alert(err.response?.data?.detail || "Error generating schedule");
@@ -173,6 +181,30 @@ const ProgramDetails = () => {
             alert(err.response?.data?.detail || "Error adding user");
             console.error(err);
         }
+    };
+
+    const fetchBrowseUsers = async (page = 0) => {
+        try {
+            const limit = 5;
+            const res = await api.get(`/api/users?skip=${page * limit}&limit=${limit}`);
+            if (page === 0) setBrowseUsers(res.data);
+            else setBrowseUsers(prev => [...prev, ...res.data]);
+
+            setBrowsePage(page);
+            setHasMoreUsers(res.data.length === limit);
+        } catch (err) {
+            console.error("Failed to load users for browsing", err);
+        }
+    };
+
+    const openBrowseModal = () => {
+        setShowBrowseUsers(true);
+        fetchBrowseUsers(0);
+    };
+
+    const selectUserFromBrowse = (email) => {
+        setNewUser({ ...newUser, email });
+        setShowBrowseUsers(false);
     };
 
     const canManage = ['ORGANISER', 'COMMITTEE'].includes(myRole);
@@ -394,28 +426,38 @@ const ProgramDetails = () => {
                     </>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <h2 style={{ margin: 0 }}>Program Schedule & Duties</h2>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                            <input
-                                type="checkbox"
-                                checked={showMyDutiesOnly}
-                                onChange={(e) => setShowMyDutiesOnly(e.target.checked)}
-                                style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
-                            />
-                            Show My Duties Only
-                        </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <h2 style={{ margin: 0 }}>Program Schedule & Duties</h2>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={showMyDutiesOnly}
+                                    onChange={(e) => setShowMyDutiesOnly(e.target.checked)}
+                                    style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
+                                />
+                                Show My Duties Only
+                            </label>
+                        </div>
                     </div>
                     {canManage && (
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleGenerateSchedule}
-                            disabled={isGeneratingSchedule || events.length === 0}
-                            style={{ backgroundColor: 'var(--accent-color)' }}
-                        >
-                            {isGeneratingSchedule ? 'Generating...' : 'Generate AI Schedule'}
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flex: '1 1 300px' }}>
+                            <textarea
+                                value={humanPrompt}
+                                onChange={e => setHumanPrompt(e.target.value)}
+                                placeholder="Optional: NLP Constraints (e.g., 'Prefer event X in the morning')"
+                                style={{ width: '100%', maxWidth: '400px', minHeight: '60px', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', resize: 'vertical' }}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleGenerateSchedule}
+                                disabled={isGeneratingSchedule || events.length === 0}
+                                style={{ backgroundColor: 'var(--accent-color)', width: '100%', maxWidth: '400px' }}
+                            >
+                                {isGeneratingSchedule ? 'Generating...' : 'Generate AI Schedule'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -641,9 +683,17 @@ const ProgramDetails = () => {
                 {showAddUser && canManage && (
                     <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--text-secondary)' }}>
                         <h3>Assign a User to this Program</h3>
-                        <form onSubmit={handleAddUser} style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                            <div style={{ flex: 1 }}>
-                                <label>User Email</label>
+                        <form onSubmit={handleAddUser} style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1 1 200px' }}>
+                                <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>User Email</span>
+                                    <span
+                                        style={{ color: 'var(--accent-color)', cursor: 'pointer', fontSize: '0.85rem' }}
+                                        onClick={openBrowseModal}
+                                    >
+                                        Browse Users
+                                    </span>
+                                </label>
                                 <input required type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="user@example.com" />
                             </div>
                             <div style={{ flex: 1 }}>
@@ -681,6 +731,59 @@ const ProgramDetails = () => {
                     ))}
                 </div>
 
+                {/* BROWSE USERS MODAL */}
+                {showBrowseUsers && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div className="card" style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                                <h3 style={{ margin: 0 }}>Browse Global Users</h3>
+                                <button type="button" onClick={() => setShowBrowseUsers(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {browseUsers.map(u => {
+                                    const isAlreadyInProgram = users.some(existing => existing.id === u.id);
+                                    return (
+                                        <div
+                                            key={u.id}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)',
+                                                opacity: isAlreadyInProgram ? 0.5 : 1
+                                            }}
+                                        >
+                                            <div>
+                                                <div style={{ fontWeight: 'bold' }}>{u.full_name}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{u.email}</div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => selectUserFromBrowse(u.email)}
+                                                disabled={isAlreadyInProgram}
+                                            >
+                                                {isAlreadyInProgram ? 'Added' : 'Select'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {hasMoreUsers && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: '1rem', width: '100%' }}
+                                    onClick={() => fetchBrowseUsers(browsePage + 1)}
+                                >
+                                    Load More Users
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

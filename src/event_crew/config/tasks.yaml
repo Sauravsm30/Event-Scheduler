@@ -15,7 +15,8 @@ allocate_venues:
     You have been provided with EXACTLY these venues: {{venues}}.
     CRITICAL INSTRUCTION: Assign ONLY these existing venues to the scheduled events. Respect their capacities and availability.
     If an event does not explicitly specify a 'preferred venue', you should automatically assume ANY available venue that fits the capacity requirements can be used.
-    DO NOT invent, fabricate, or create new venues under any circumstances. If an event cannot find a venue, mark it as un-venued.
+    DO NOT invent, fabricate, or create new venues under any circumstances. 
+    CRITICAL: You MUST ensure that the venue logically makes sense for the event's Domain. NEVER assign an event to a completely illogical venue (e.g., assigning a 'tech' Hackathon to a 'sports' Basketball Court) just for the sake of scheduling it! If an event cannot find a logically appropriate venue, you MUST exclude the event from the schedule or leave its scheduled_venue_id as null.
   expected_output: >
     Event-to-venue assignment mapping ONLY using existing provided venues.
   agent: venue_manager
@@ -35,6 +36,8 @@ resolve_conflicts:
   description: >
     Identify and resolve conflicts in schedules, venues, or volunteers.
     CRITICAL INSTRUCTION: Use ONLY the existing data. Never resolve a conflict by inventing new resources.
+    IMPORTANT: If there are unresolvable conflicts that force you to break constraints (like double-booking a venue or missing a venue entirely), you MUST include the exact string 'FATAL_UNRESOLVABLE_CONFLICT' anywhere in your final output.
+    If an event could not be assigned a valid, logical venue in the previous step, you MUST completely remove that event from the final schedule. Do not output it with a null venue.
   expected_output: >
     A corrected plan using ONLY the explicitly provided input data.
   agent: conflict_resolver
@@ -43,6 +46,8 @@ resolve_conflicts:
 adaptive_replanning:
   description: >
     Adjust assignments if necessary, while minimizing disruption.
+    You MUST prioritize this constraint: {{human_prompt_text}}
+    If there is an existing schedule provided here: {{current_schedule}}, use it as your baseline and ONLY change what is absolutely necessary.
     CRITICAL INSTRUCTION: You must strictly stick to the inputted data pool.
   expected_output: >
     Updated schedule using only provided inputs.
@@ -53,7 +58,8 @@ explain_decisions:
   description: >
     Explain why each scheduling, venue, and volunteer decision was made.
     Strictly base your explanation on the provided {{events}}, {{venues}}, {{volunteers}}, and {{program}} constraints. Do not reference hallucinated data.
-    IMPORTANT: You must output a valid JSON object containing TWO keys: "schedule" (which is the final array of event JSON objects) and "explanations" (which is your string explanation of the decisions).
+    IMPORTANT: If you encounter unresolvable conflicts or the string 'FATAL_UNRESOLVABLE_CONFLICT' in the previous step, you MUST output a valid JSON object containing exactly this: {"schedule": [], "explanations": "FATAL_UNRESOLVABLE_CONFLICT"}
+    OTHERWISE, you must output a valid JSON object containing TWO keys: "schedule" (which is the final array of event JSON objects) and "explanations" (which is your string explanation of the decisions).
   expected_output: >
     A strict JSON object in this format: {"schedule": [{"event_id": "...", "date": "YYYY-MM-DD", "scheduled_venue_id": "...", "volunteer_ids": ["..."], "start_time": "...", "end_time": "..."}], "explanations": "Your detailed explanation here."}
   agent: decision_explainer

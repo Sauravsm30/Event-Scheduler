@@ -139,6 +139,9 @@ class ScheduleBase(BaseModel):
     data: str
     timestamp: str
 
+class ScheduleGenerateRequest(BaseModel):
+    human_prompt: Optional[str] = None
+
 class Schedule(ScheduleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     model_config = ConfigDict(from_attributes=True)
@@ -220,6 +223,10 @@ async def update_my_skills(skills_data: UserSkillsUpdate, db: Session = Depends(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+@app.get("/api/users", response_model=List[UserResponse], tags=["Users"])
+async def get_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    return db.query(DBUser).offset(skip).limit(limit).all()
 
 # Program APIs
 
@@ -430,9 +437,50 @@ async def set_venue_unavailable(id: str, db: Session = Depends(get_db), current_
     
     if db_venue.program_id:
         require_organiser_or_committee(db_venue.program_id, current_user, db)
+        
     db_venue.isAvailable = False
+    venue_name = db_venue.name
+    program_id = db_venue.program_id
     db.commit()
     db.refresh(db_venue)
+    
+    # Automatic Replanning Logic
+    if program_id:
+        import json
+        import re
+        curr_schedule = db.query(DBSchedule).filter(DBSchedule.program_id == program_id).order_by(DBSchedule.timestamp.desc()).first()
+        if curr_schedule and curr_schedule.data:
+            try:
+                # Robustly extract JSON block using regex if present
+                raw_data = curr_schedule.data.strip()
+                match = re.search(r'```(?:json)?\s*([\s\S]*?)```', raw_data)
+                
+                if match:
+                    clean_json = match.group(1).strip()
+                else:
+                    # Fallback to finding the first { and last }
+                    start_idx = raw_data.find('{')
+                    end_idx = raw_data.rfind('}')
+                    if start_idx != -1 and end_idx != -1:
+                        clean_json = raw_data[start_idx:end_idx+1]
+                    else:
+                        clean_json = raw_data
+                        
+                parsed_data = json.loads(clean_json)
+                schedule_list = parsed_data.get("schedule", [])
+                
+                # Check if this venue is actively used in the current schedule
+                is_used = any(item.get("scheduled_venue_id") == id for item in schedule_list)
+                
+                if is_used:
+                    # Trigger a background smart replan
+                    human_prompt = f"URGENT: The venue '{venue_name}' is no longer available. You must adaptively replan the schedule to move all events currently at '{venue_name}' to other available venues with minimal disruption to the rest of the schedule."
+                    
+                    # Run this in the background so we don't block the API response
+                    asyncio.create_task(_run_smart_replanning(program_id, db, human_prompt, curr_schedule.data))
+            except Exception as e:
+                print(f"Failed to check schedule for auto-replan: {e}")
+                
     return db_venue
 
 @app.put("/api/venues/{id}/available", response_model=Venue, tags=["Venues"])
@@ -494,14 +542,12 @@ async def fetch_assignments(id: str, db: Session = Depends(get_db)):
 
 # Scheduling APIs
 
-@app.post("/api/schedule/generate/{program_id}", tags=["Scheduling"])
-async def generate_schedule(program_id: str, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
-    # Ensure role is Organiser or Committee
-    require_organiser_or_committee(program_id, current_user, db)
-    # Fetch program details to give agents constraint context
+async def _run_smart_replanning(program_id: str, db: Session, human_prompt: str, current_schedule_data: str):
+    """Internal helper to attempt a targeted replan, and fallback to full generation if conflicts are unresolvable."""
+    import json
     program_db = db.query(DBProgram).filter(DBProgram.id == program_id).first()
     if not program_db:
-        raise HTTPException(status_code=404, detail="Program not found")
+        return
         
     program_details = {
         "name": program_db.name,
@@ -513,12 +559,90 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
         "max_parallel_events": program_db.max_parallel_events
     }
     
-    # Prepare inputs for Crew specific to this program
     events = [Event.model_validate(e).model_dump() for e in db.query(DBEvent).filter(DBEvent.program_id == program_id).all()]
     venues = [Venue.model_validate(v).model_dump() for v in db.query(DBVenue).filter(DBVenue.program_id == program_id).all()]
     volunteers = [Volunteer.model_validate(vol).model_dump() for vol in db.query(DBVolunteer).filter(DBVolunteer.program_id == program_id).all()]
     
-    # If no explicit DBVolunteers exist, fetch users assigned as VOLUNTEER to this program.
+    if not volunteers:
+        volunteer_roles = db.query(DBProgramUserRole).filter(
+            DBProgramUserRole.program_id == program_id,
+            DBProgramUserRole.role == 'VOLUNTEER'
+        ).all()
+        if volunteer_roles:
+            user_ids = [r.user_id for r in volunteer_roles]
+            team_volunteers = db.query(DBUser).filter(DBUser.id.in_(user_ids)).all()
+            volunteers = [{"id": u.id, "name": u.full_name, "skills": u.skills if u.skills else ["General Support"], "availability": ["Anytime"]} for u in team_volunteers]
+    
+    if not events:
+        return
+
+    human_prompt_text = ""
+    if human_prompt and human_prompt.strip():
+        human_prompt_text = f"ADDITIONAL HUMAN CONSTRAINT: {human_prompt.strip()}\nYou MUST prioritize fulfilling this human constraint during replanning."
+
+    inputs = {
+        "program": program_details,
+        "events": events,
+        "venues": venues,
+        "volunteers": volunteers,
+        "human_prompt_text": human_prompt_text,
+        "current_schedule": current_schedule_data
+    }
+    
+    try:
+        crew_instance = EventCrew().targeted_replan_crew()
+        result_str = str(await asyncio.to_thread(crew_instance.kickoff, inputs=inputs))
+        
+        # Check if JSON says FATAL_UNRESOLVABLE_CONFLICT
+        fallback = False
+        try:
+            parsed = json.loads(result_str)
+            if "FATAL_UNRESOLVABLE_CONFLICT" in parsed.get("explanations", "") or "FATAL_UNRESOLVABLE_CONFLICT" in str(result_str):
+                fallback = True
+        except:
+            if "FATAL_UNRESOLVABLE_CONFLICT" in result_str:
+                fallback = True
+
+        if fallback:
+            print("Targeted replanning failed due to conflicts. Falling back to full schedule generation!")
+            return await _run_schedule_generation(program_id, db, human_prompt)
+            
+        # Store successful targeted plan
+        schedule_id = str(uuid.uuid4())
+        new_schedule = DBSchedule(
+            id=schedule_id,
+            program_id=program_id,
+            data=result_str,
+            timestamp=datetime.datetime.now().isoformat()
+        )
+        db.add(new_schedule)
+        db.commit()
+        db.refresh(new_schedule)
+        return new_schedule
+    except Exception as e:
+        print(f"Failed targeted smart replan internally: {e}. Falling back to full generation.")
+        return await _run_schedule_generation(program_id, db, human_prompt)
+
+async def _run_schedule_generation(program_id: str, db: Session, human_prompt: str = ""):
+    """Internal helper to actually run the crew and store the schedule."""
+    program_db = db.query(DBProgram).filter(DBProgram.id == program_id).first()
+    if not program_db:
+        return
+        
+    program_details = {
+        "name": program_db.name,
+        "start_date": str(program_db.start_date),
+        "end_date": str(program_db.end_date),
+        "daily_start_time": str(program_db.daily_start_time) if program_db.daily_start_time else None,
+        "daily_end_time": str(program_db.daily_end_time) if program_db.daily_end_time else None,
+        "is_24_hour_event": program_db.is_24_hour_event,
+        "max_parallel_events": program_db.max_parallel_events
+    }
+    
+    events = [Event.model_validate(e).model_dump() for e in db.query(DBEvent).filter(DBEvent.program_id == program_id).all()]
+    venues = [Venue.model_validate(v).model_dump() for v in db.query(DBVenue).filter(DBVenue.program_id == program_id).all()]
+    volunteers = [Volunteer.model_validate(vol).model_dump() for vol in db.query(DBVolunteer).filter(DBVolunteer.program_id == program_id).all()]
+    
     if not volunteers:
         volunteer_roles = db.query(DBProgramUserRole).filter(
             DBProgramUserRole.program_id == program_id,
@@ -537,22 +661,26 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
                 for u in team_volunteers
             ]
     
+    if not events:
+        return
+
+    human_prompt_text = ""
+    if human_prompt and human_prompt.strip():
+        human_prompt_text = f"ADDITIONAL HUMAN CONSTRAINT: {human_prompt.strip()}\nYou MUST prioritize fulfilling this human constraint during replanning."
+
     inputs = {
         "program": program_details,
         "events": events,
         "venues": venues,
-        "volunteers": volunteers
+        "volunteers": volunteers,
+        "human_prompt_text": human_prompt_text,
+        "current_schedule": ""  # baseline expects this now
     }
     
-    if not inputs["events"]:
-        raise HTTPException(status_code=400, detail="No events to schedule")
-
     try:
-        # Run the crew in a separate thread so it doesn't block FastAPI
         crew_instance = EventCrew().crew()
         result = await asyncio.to_thread(crew_instance.kickoff, inputs=inputs)
         
-        # Store schedule
         schedule_id = str(uuid.uuid4())
         new_schedule = DBSchedule(
             id=schedule_id,
@@ -561,13 +689,24 @@ async def generate_schedule(program_id: str, db: Session = Depends(get_db), curr
             timestamp=datetime.datetime.now().isoformat()
         )
         db.add(new_schedule)
-        
         db.commit()
         db.refresh(new_schedule)
-        
-        return Schedule.model_validate(new_schedule)
+        return new_schedule
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Failed to generate schedule internally: {e}")
+        return None
+
+
+@app.post("/api/schedule/generate/{program_id}", tags=["Scheduling"])
+async def generate_schedule(program_id: str, req: ScheduleGenerateRequest, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    # Ensure role is Organiser or Committee
+    require_organiser_or_committee(program_id, current_user, db)
+    
+    new_schedule = await _run_schedule_generation(program_id, db, req.human_prompt if req.human_prompt else "")
+    if not new_schedule:
+        raise HTTPException(status_code=500, detail="Failed to run internal schedule generation or no events found.")
+        
+    return Schedule.model_validate(new_schedule)
 
 @app.get("/api/schedule/program/{program_id}", response_model=Schedule, tags=["Scheduling"])
 async def fetch_current_schedule(program_id: str, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):

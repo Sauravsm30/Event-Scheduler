@@ -75,3 +75,11 @@ class EventCrew():
             process=Process.sequential,
             verbose=True
         )
+
+    def targeted_replan_crew(self) -> Crew:
+        return Crew(
+            agents=[self.adaptive_replanner(), self.conflict_resolver(), self.decision_explainer()],
+            tasks=[self.adaptive_replanning(), self.resolve_conflicts(), self.explain_decisions()],
+            process=Process.sequential,
+            verbose=True
+        )
