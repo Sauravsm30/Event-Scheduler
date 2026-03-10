@@ -737,7 +737,31 @@ async def approve_schedule(id: str, background_tasks: BackgroundTasks, db: Sessi
         valid_emails = [u.email for u in users_in_program if u.email]
         
         if valid_emails:
-            background_tasks.add_task(email_dispatcher.send_schedule_approval_email, program_db.name, valid_emails)
+            import json
+            try:
+                sched_data = json.loads(db_sched.data)
+                schedule_list = sched_data.get("events", [])
+                
+                # Fetch human-readable names for the email table
+                program_events = {e.id: e.name for e in db.query(DBEvent).filter(DBEvent.program_id == program_db.id).all()}
+                program_venues = {v.id: v.name for v in db.query(DBVenue).filter(DBVenue.program_id == program_db.id).all()}
+                
+                readable_schedule = []
+                for item in sorted(schedule_list, key=lambda x: (x.get('date', ''), x.get('start_time', ''))):
+                    start_time = item.get("start_time", "")
+                    end_time = item.get("end_time", "")
+                    readable_schedule.append({
+                        "event": program_events.get(item.get("event_id"), "Unknown Event"),
+                        "venue": program_venues.get(item.get("scheduled_venue_id"), "Unknown Venue"),
+                        "date": item.get("date", ""),
+                        "start": start_time.split("T")[-1][:5] if start_time else "",
+                        "end": end_time.split("T")[-1][:5] if end_time else ""
+                    })
+            except Exception as e:
+                print(f"Error parsing schedule for email: {e}")
+                readable_schedule = []
+
+            background_tasks.add_task(email_dispatcher.send_schedule_approval_email, program_db.name, valid_emails, readable_schedule)
             
     return {"message": "Schedule approved and notifications queued!"}
 

@@ -6,34 +6,44 @@
       "date": "2026-02-26",
       "scheduled_venue_id": "389409ad-163c-4aee-8f27-0a4aeae44588",
       "volunteer_ids": [
-        "a6fe2802-29f3-4521-ae73-62ace808433c",
+        "2e0a5130-0108-45fb-9c81-635a9572ca00",
         "75cc777a-68b3-4942-8e58-b01307437d43",
-        "2e0a5130-0108-45fb-9c81-635a9572ca00"
+        "95911f65-bc12-496c-b650-df8328cb0e8e",
+        "a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8",
+        "a6fe2802-29f3-4521-ae73-62ace808433c"
       ],
-      "start_time": "09:00:00",
-      "end_time": "09:00:00"
+      "start_time": "00:00",
+      "end_time": "00:00"
     },
     {
       "event_id": "697c9a96-3976-41c1-b5cf-d878ebf4f2f7",
       "date": "2026-02-27",
-      "scheduled_venue_id": "389409ad-163c-4aee-8f27-0a4aeae44588",
+      "scheduled_venue_id": "896ab847-ffd8-407b-aec0-9a4533d872bf",
       "volunteer_ids": [
-        "95911f65-bc12-496c-b650-df8328cb0e8e"
+        "2e0a5130-0108-45fb-9c81-635a9572ca00",
+        "75cc777a-68b3-4942-8e58-b01307437d43",
+        "95911f65-bc12-496c-b650-df8328cb0e8e",
+        "a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8",
+        "a6fe2802-29f3-4521-ae73-62ace808433c"
       ],
-      "start_time": "09:00:00",
-      "end_time": "12:00:00"
+      "start_time": "00:00",
+      "end_time": "03:00"
     },
     {
       "event_id": "92dd57e0-2980-4d7d-b18e-563a79d9db0b",
       "date": "2026-02-27",
       "scheduled_venue_id": "e8c050ed-69ed-4086-a67d-466e2fe312b7",
       "volunteer_ids": [
-        "a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8"
+        "2e0a5130-0108-45fb-9c81-635a9572ca00",
+        "75cc777a-68b3-4942-8e58-b01307437d43",
+        "95911f65-bc12-496c-b650-df8328cb0e8e",
+        "a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8",
+        "a6fe2802-29f3-4521-ae73-62ace808433c"
       ],
-      "start_time": "12:00:00",
-      "end_time": "13:00:00"
+      "start_time": "03:00",
+      "end_time": "04:00"
     }
   ],
-  "explanations": "The scheduling decisions were made to accommodate the duration and preferred venues for each program while respecting the overall program dates (2026-02-26 to 2026-02-28) and the constraint of a maximum of one parallel event. \n\nFor the 'hackathon' (ID: 377695a2-7445-4607-9757-dc178fb3c137):\n*   **Scheduling:** It was scheduled to start on 2026-02-26 at 09:00:00 and run for 1440 minutes (24 hours), concluding on 2026-02-27 at 09:00:00. This duration aligns with the program's definition. The event is listed with a start date of 2026-02-26 and a start time of 09:00:00, with an end time of 09:00:00, reflecting its 24-hour duration across two days.\n*   **Venue:** The 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) was chosen as it was the preferred venue for the 'hackathon', had a capacity of 200 (sufficient for 100 expected participants), and provided 'projector' and 'computers' facilities suitable for a tech-domain event. The venue was available.\n*   **Volunteers:** Saurav S Menon (ID: a6fe2802-29f3-4521-ae73-62ace808433c), test6 (ID: 75cc777a-68b3-4942-8e58-b01307437d43), and test5 (ID: 2e0a5130-0108-45fb-9c81-635a9572ca00) were assigned. All possess 'General Support' skills and 'Anytime' availability, making them suitable. Saurav S Menon also offers specialized skills like 'Tech Support' and 'Crowd Control' which are beneficial for a hackathon.\n\nFor the 'code clash' (ID: 697c9a96-3976-41c1-b5cf-d878ebf4f2f7):\n*   **Scheduling:** It was scheduled on 2026-02-27 from 09:00:00 to 12:00:00, immediately following the 'hackathon' in the same venue. This respects its 180-minute (3-hour) duration and the 'max_parallel_events: 1' constraint, as it starts precisely when the previous event concludes.\n*   **Venue:** The 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) was selected as it was the preferred venue for the 'code clash', had a capacity of 200 (sufficient for 20 expected participants), and offered 'computers' and a 'projector' suitable for a tech-domain event. The venue was available at the scheduled time.\n*   **Volunteers:** test2 (ID: 95911f65-bc12-496c-b650-df8328cb0e8e) was assigned due to their 'General Support' skills and 'Anytime' availability.\n\nFor the 'basketball' event (ID: 92dd57e0-2980-4d7d-b18e-563a79d9db0b):\n*   **Scheduling:** It was scheduled on 2026-02-27 from 12:00:00 to 13:00:00, immediately following the 'code clash'. This accommodates its 60-minute (1-hour) duration and the 'max_parallel_events: 1' constraint.\n*   **Venue:** The 'basketball court' (ID: e8c050ed-69ed-4086-a67d-466e2fe312b7) was chosen as it was the preferred venue for the 'basketball' event, had a capacity of 100 (sufficient for 50 expected participants), and provided 'basketball nets' which are essential facilities for a sports-domain event. The venue was available at the scheduled time.\n*   **Volunteers:** test4 (ID: a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8) was assigned due to their 'General Support' skills and 'Anytime' availability."
+  "explanations": "The scheduling, venue, and volunteer decisions were made based on the provided program constraints and event details, ensuring no conflicts due to the 'test-program's `max_parallel_events` set to 1.\n\n**Overall Scheduling Decisions:**\nThe 'test-program' is scheduled from 2026-02-26 to 2026-02-28. Given that `max_parallel_events` is 1, only one event can occur at any given time. The `is_24_hour_event` is `False`, but `daily_start_time` and `daily_end_time` are `None`. Following the strict instruction to work only with existing data, events are scheduled sequentially starting from the program's `start_date` at 00:00, continuing until all events are placed.\n\n**Individual Event Decisions:**\n\n1.  **Hackathon (ID: 377695a2-7445-4607-9757-dc178fb3c137):**\n    *   **Scheduling:** This event was scheduled first, starting on 2026-02-26 at 00:00 and ending on 2026-02-27 at 00:00. This accounts for its 1440-minute (24-hour) duration and respects the sequential scheduling requirement.\n    *   **Venue:** The 'hackathon' had a `preferredVenueId` of '389409ad-163c-4aee-8f27-0a4aeae44588', which corresponds to 'CCF'. 'CCF' was chosen because it has a capacity of 200, which is sufficient for the event's `expectedParticipants` of 100. It also provides 'computers' and a 'projector', facilities suitable for a 'tech' domain event like a hackathon, and was available at the scheduled time.\n    *   **Volunteers:** All five available volunteers ('test5', 'test6', 'test2', 'test4', 'saurav s menon') were assigned to the 'hackathon'. All these volunteers possess 'General Support' skills and have 'Anytime' availability, making them suitable for this event. Since no other events were running concurrently, all available volunteers could be assigned without conflict.\n\n2.  **Code Clash (ID: 697c9a96-3976-41c1-b5cf-d878ebf4f2f7):**\n    *   **Scheduling:** This event was scheduled immediately after the 'hackathon', starting on 2026-02-27 at 00:00 and ending on 2026-02-27 at 03:00. This adheres to the `max_parallel_events: 1` constraint and accommodates its 180-minute (3-hour) duration.\n    *   **Venue:** The 'code clash' also had 'CCF' (ID: '389409ad-163c-4aee-8f27-0a4aeae44588') as its `preferredVenueId`. However, 'CCF' was occupied by the 'hackathon' until 2026-02-27 00:00. Therefore, 'Computer Lab 1' (ID: '896ab847-ffd8-407b-aec0-9a4533d872bf') was selected. 'Computer Lab 1' has a capacity of 200, sufficient for the event's `expectedParticipants` of 20, and provides 'computers', which are appropriate for a 'Tech' domain event. 'Computer Lab 1' was available at the scheduled time.\n    *   **Volunteers:** All five available volunteers were assigned to the 'code clash'. Their 'General Support' skills and 'Anytime' availability made them suitable, and their availability was not conflicted as this event is sequential to the previous one.\n\n3.  **Basketball (ID: 92dd57e0-2980-4d7d-b18e-563a79d9db0b):**\n    *   **Scheduling:** This event was scheduled immediately after the 'code clash', starting on 2026-02-27 at 03:00 and ending on 2026-02-27 at 04:00. This maintains the sequential scheduling and covers its 60-minute (1-hour) duration.\n    *   **Venue:** The 'basketball' event had a `preferredVenueId` of 'e8c050ed-69ed-4086-a67d-466e2fe312b7', which is the 'basketball court'. This venue was chosen because it has a capacity of 100, sufficient for the event's `expectedParticipants` of 50, and provides 'basketball nets', facilities appropriate for a 'sports' domain event. The 'basketball court' was available at the scheduled time.\n    *   **Volunteers:** All five available volunteers were assigned to the 'basketball' event. Their 'General Support' skills and 'Anytime' availability made them suitable, and their availability was not conflicted as this event is sequential to the previous one."
 }
 ```

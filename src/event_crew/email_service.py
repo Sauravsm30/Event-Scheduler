@@ -10,7 +10,7 @@ class EmailService:
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
 
-    def send_schedule_approval_email(self, program_name: str, recipients: list[str]):
+    def send_schedule_approval_email(self, program_name: str, recipients: list[str], schedule_data: list = None):
         if not self.app_password or not self.sender_email:
             print("WARNING: Gmail App Password / Sender Email not found in .env. Skipping email dispatch.")
             return
@@ -19,6 +19,39 @@ class EmailService:
         
         # We send 'TO' ourselves, and 'BCC' everyone else to hide member emails
         bcc_list = list(set([r for r in recipients if r != self.sender_email]))
+
+        # Dynamically build the schedule table if data was provided
+        table_html = ""
+        if schedule_data:
+            table_html = """
+            <h3 style="color: #4f46e5; margin-top: 32px; margin-bottom: 12px; font-size: 18px; border-bottom: 2px solid #eef2ff; padding-bottom: 8px;">Official Schedule</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background-color: #f8fafc; color: #475569; border-bottom: 2px solid #cbd5e1;">
+                            <th style="padding: 12px 16px; font-weight: 600;">Date</th>
+                            <th style="padding: 12px 16px; font-weight: 600;">Time</th>
+                            <th style="padding: 12px 16px; font-weight: 600;">Event</th>
+                            <th style="padding: 12px 16px; font-weight: 600;">Venue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
+            for i, row in enumerate(schedule_data):
+                bg_color = "#ffffff" if i % 2 == 0 else "#f8fafc"
+                table_html += f"""
+                        <tr style="background-color: {bg_color}; border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px 16px; color: #334155; white-space: nowrap;">{row.get('date', '')}</td>
+                            <td style="padding: 12px 16px; color: #334155; white-space: nowrap;">{row.get('start', '')} - {row.get('end', '')}</td>
+                            <td style="padding: 12px 16px; font-weight: 500; color: #0f172a;">{row.get('event', '')}</td>
+                            <td style="padding: 12px 16px; color: #475569;">{row.get('venue', '')}</td>
+                        </tr>
+                """
+            table_html += """
+                    </tbody>
+                </table>
+            </div>
+            """
 
         html_content = f"""
         <html>
@@ -38,8 +71,10 @@ class EmailService:
                     You can now log into the dashboard to check your venue assignments, timings, and volunteer duties.
                 </p>
                 
+                {table_html}
+                
                 <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9; text-align: center;">
-                    <a href="#" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">View Schedule</a>
+                    <a href="http://localhost:5173/programs" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Log In To Dashboard</a>
                 </div>
             </div>
         </body>
