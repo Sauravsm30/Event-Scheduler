@@ -6,11 +6,12 @@
       "date": "2026-02-26",
       "scheduled_venue_id": "389409ad-163c-4aee-8f27-0a4aeae44588",
       "volunteer_ids": [
-        "2e0a5130-0108-45fb-9c81-635a9572ca00",
-        "75cc777a-68b3-4942-8e58-b01307437d43"
+        "a6fe2802-29f3-4521-ae73-62ace808433c",
+        "75cc777a-68b3-4942-8e58-b01307437d43",
+        "2e0a5130-0108-45fb-9c81-635a9572ca00"
       ],
-      "start_time": "2026-02-26T09:00:00",
-      "end_time": "2026-02-27T09:00:00"
+      "start_time": "09:00:00",
+      "end_time": "09:00:00"
     },
     {
       "event_id": "697c9a96-3976-41c1-b5cf-d878ebf4f2f7",
@@ -19,20 +20,20 @@
       "volunteer_ids": [
         "95911f65-bc12-496c-b650-df8328cb0e8e"
       ],
-      "start_time": "2026-02-27T10:00:00",
-      "end_time": "2026-02-27T13:00:00"
+      "start_time": "09:00:00",
+      "end_time": "12:00:00"
     },
     {
       "event_id": "92dd57e0-2980-4d7d-b18e-563a79d9db0b",
-      "date": "2026-02-28",
+      "date": "2026-02-27",
       "scheduled_venue_id": "e8c050ed-69ed-4086-a67d-466e2fe312b7",
       "volunteer_ids": [
         "a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8"
       ],
-      "start_time": "2026-02-28T10:00:00",
-      "end_time": "2026-02-28T11:00:00"
+      "start_time": "12:00:00",
+      "end_time": "13:00:00"
     }
   ],
-  "explanations": "The 'hackathon' (ID: 377695a2-7445-4607-9757-dc178fb3c137) was scheduled from 2026-02-26T09:00:00 to 2026-02-27T09:00:00, matching its 1440-minute duration. It was assigned to 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) because 'CCF' is the preferred venue for the 'hackathon' program, has a capacity of 200 which accommodates the 100 expected participants, and provides 'projector' and 'computers' facilities suitable for a 'tech' domain event. Volunteers 'test5' (ID: 2e0a5130-0108-45fb-9c81-635a9572ca00) and 'test6' (ID: 75cc777a-68b3-4942-8e58-b01307437d43) were assigned due to their 'General Support' skills and 'Anytime' availability.\n\nThe 'code clash' (ID: 697c9a96-3976-41c1-b5cf-d878ebf4f2f7) was scheduled from 2026-02-27T10:00:00 to 2026-02-27T13:00:00, matching its 180-minute duration. This scheduling respects the 'max_parallel_events: 1' constraint as it begins after the 'hackathon' concludes. It was assigned to 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) because 'CCF' is the preferred venue for the 'code clash' program, has a capacity of 200 which accommodates the 20 expected participants, and provides 'projector' and 'computers' facilities suitable for a 'Tech' domain event. Volunteer 'test2' (ID: 95911f65-bc12-496c-b650-df8328cb0e8e) was assigned due to their 'General Support' skills and 'Anytime' availability.\n\nThe 'basketball' event (ID: 92dd57e0-2980-4d7d-b18e-563a79d9db0b) was scheduled from 2026-02-28T10:00:00 to 2026-02-28T11:00:00, matching its 60-minute duration. This scheduling respects the 'max_parallel_events: 1' constraint as it begins after the 'code clash' concludes and falls within the overall program dates. It was assigned to the 'basketball court' (ID: e8c050ed-69ed-4086-a67d-466e2fe312b7) because it is the preferred venue for the 'basketball' program, has a capacity of 100 which accommodates the 50 expected participants, and provides 'basketball nets' facilities specifically required for a 'sports' domain event. Volunteer 'test4' (ID: a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8) was assigned due to their 'General Support' skills and 'Anytime' availability."
+  "explanations": "The scheduling decisions were made to accommodate the duration and preferred venues for each program while respecting the overall program dates (2026-02-26 to 2026-02-28) and the constraint of a maximum of one parallel event. \n\nFor the 'hackathon' (ID: 377695a2-7445-4607-9757-dc178fb3c137):\n*   **Scheduling:** It was scheduled to start on 2026-02-26 at 09:00:00 and run for 1440 minutes (24 hours), concluding on 2026-02-27 at 09:00:00. This duration aligns with the program's definition. The event is listed with a start date of 2026-02-26 and a start time of 09:00:00, with an end time of 09:00:00, reflecting its 24-hour duration across two days.\n*   **Venue:** The 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) was chosen as it was the preferred venue for the 'hackathon', had a capacity of 200 (sufficient for 100 expected participants), and provided 'projector' and 'computers' facilities suitable for a tech-domain event. The venue was available.\n*   **Volunteers:** Saurav S Menon (ID: a6fe2802-29f3-4521-ae73-62ace808433c), test6 (ID: 75cc777a-68b3-4942-8e58-b01307437d43), and test5 (ID: 2e0a5130-0108-45fb-9c81-635a9572ca00) were assigned. All possess 'General Support' skills and 'Anytime' availability, making them suitable. Saurav S Menon also offers specialized skills like 'Tech Support' and 'Crowd Control' which are beneficial for a hackathon.\n\nFor the 'code clash' (ID: 697c9a96-3976-41c1-b5cf-d878ebf4f2f7):\n*   **Scheduling:** It was scheduled on 2026-02-27 from 09:00:00 to 12:00:00, immediately following the 'hackathon' in the same venue. This respects its 180-minute (3-hour) duration and the 'max_parallel_events: 1' constraint, as it starts precisely when the previous event concludes.\n*   **Venue:** The 'CCF' (ID: 389409ad-163c-4aee-8f27-0a4aeae44588) was selected as it was the preferred venue for the 'code clash', had a capacity of 200 (sufficient for 20 expected participants), and offered 'computers' and a 'projector' suitable for a tech-domain event. The venue was available at the scheduled time.\n*   **Volunteers:** test2 (ID: 95911f65-bc12-496c-b650-df8328cb0e8e) was assigned due to their 'General Support' skills and 'Anytime' availability.\n\nFor the 'basketball' event (ID: 92dd57e0-2980-4d7d-b18e-563a79d9db0b):\n*   **Scheduling:** It was scheduled on 2026-02-27 from 12:00:00 to 13:00:00, immediately following the 'code clash'. This accommodates its 60-minute (1-hour) duration and the 'max_parallel_events: 1' constraint.\n*   **Venue:** The 'basketball court' (ID: e8c050ed-69ed-4086-a67d-466e2fe312b7) was chosen as it was the preferred venue for the 'basketball' event, had a capacity of 100 (sufficient for 50 expected participants), and provided 'basketball nets' which are essential facilities for a sports-domain event. The venue was available at the scheduled time.\n*   **Volunteers:** test4 (ID: a24ad9a7-a38a-4af6-bdfd-3acfe1a2a2a8) was assigned due to their 'General Support' skills and 'Anytime' availability."
 }
 ```

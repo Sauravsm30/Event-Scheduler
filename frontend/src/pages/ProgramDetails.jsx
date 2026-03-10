@@ -16,6 +16,7 @@ const ProgramDetails = () => {
     const [myRole, setMyRole] = useState('VOLUNTEER');
     const [schedule, setSchedule] = useState(null);
     const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
     const [humanPrompt, setHumanPrompt] = useState("");
     const [showMyDutiesOnly, setShowMyDutiesOnly] = useState(false);
     const [showAddEvent, setShowAddEvent] = useState(false);
@@ -167,6 +168,21 @@ const ProgramDetails = () => {
             alert(err.response?.data?.detail || "Error generating schedule");
         } finally {
             setIsGeneratingSchedule(false);
+        }
+    };
+
+    const handleApproveSchedule = async () => {
+        if (!schedule) return;
+        setIsApproving(true);
+        try {
+            await api.put(`/api/schedule/${schedule.id}/approve`);
+            setSchedule({ ...schedule, is_approved: true });
+            alert("Schedule formally approved! Notificaton emails are being dispatched.");
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.detail || "Error approving schedule");
+        } finally {
+            setIsApproving(false);
         }
     };
 
@@ -463,8 +479,27 @@ const ProgramDetails = () => {
 
                 {schedule ? (
                     <div style={{ marginBottom: '2rem' }}>
-                        <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                            Last generated: {new Date(schedule.timestamp).toLocaleString()}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                Last generated: {new Date(schedule.timestamp).toLocaleString()}
+                                {schedule.is_approved && (
+                                    <span style={{ marginLeft: '1rem', backgroundColor: '#34d399', color: '#064e3b', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>✓ APPROVED</span>
+                                )}
+                            </div>
+
+                            {canManage && !schedule.is_approved && (
+                                <button
+                                    onClick={handleApproveSchedule}
+                                    disabled={isApproving}
+                                    style={{
+                                        backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px',
+                                        border: 'none', fontWeight: 'bold', cursor: isApproving ? 'not-allowed' : 'pointer',
+                                        opacity: isApproving ? 0.7 : 1
+                                    }}
+                                >
+                                    {isApproving ? 'Approving...' : '✓ Approve & Finalize Schedule'}
+                                </button>
+                            )}
                         </div>
                         {(() => {
                             try {

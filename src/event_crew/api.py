@@ -18,7 +18,7 @@ def _load_repo_dotenv():
                 key, val = line.split("=", 1)
                 key = key.strip()
                 val = val.strip().strip('"').strip("'")
-                if key and key not in os.environ:
+                if key:
                     os.environ[key] = val
     except Exception:
         pass
@@ -27,7 +27,7 @@ _load_repo_dotenv()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import List, Optional
@@ -37,6 +37,7 @@ import asyncio
 from sqlalchemy.orm import Session
 
 from event_crew.crew import EventCrew
+from event_crew.email_service import email_dispatcher
 from event_crew.database import SessionLocal, init_db, DBProgram, DBEvent, DBVenue, DBVolunteer, DBSchedule, DBUser, DBProgramUserRole
 from event_crew.auth import get_password_hash, verify_password, create_access_token, verify_token
 
@@ -138,6 +139,7 @@ class ScheduleBase(BaseModel):
     program_id: Optional[str] = None
     data: str
     timestamp: str
+    is_approved: bool = False
 
 class ScheduleGenerateRequest(BaseModel):
     human_prompt: Optional[str] = None
@@ -707,6 +709,37 @@ async def generate_schedule(program_id: str, req: ScheduleGenerateRequest, db: S
         raise HTTPException(status_code=500, detail="Failed to run internal schedule generation or no events found.")
         
     return Schedule.model_validate(new_schedule)
+
+@app.put("/api/schedule/{id}/approve", tags=["Scheduling"])
+async def approve_schedule(id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    db_sched = db.query(DBSchedule).filter(DBSchedule.id == id).first()
+    if not db_sched:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+        
+    require_organiser_or_committee(db_sched.program_id, current_user, db)
+    
+    if db_sched.is_approved:
+        return {"message": "Schedule is already approved!"}
+        
+    # Mark as approved
+    db_sched.is_approved = True
+    db.commit()
+    db.refresh(db_sched)
+    
+    # Trigger SendGrid Email Blast in background
+    program_db = db.query(DBProgram).filter(DBProgram.id == db_sched.program_id).first()
+    if program_db:
+        # Get all users involved in this program (Volunteers, Organisers, Committee)
+        program_roles = db.query(DBProgramUserRole).filter(DBProgramUserRole.program_id == program_db.id).all()
+        user_ids = [r.user_id for r in program_roles]
+        
+        users_in_program = db.query(DBUser).filter(DBUser.id.in_(user_ids)).all()
+        valid_emails = [u.email for u in users_in_program if u.email]
+        
+        if valid_emails:
+            background_tasks.add_task(email_dispatcher.send_schedule_approval_email, program_db.name, valid_emails)
+            
+    return {"message": "Schedule approved and notifications queued!"}
 
 @app.get("/api/schedule/program/{program_id}", response_model=Schedule, tags=["Scheduling"])
 async def fetch_current_schedule(program_id: str, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):

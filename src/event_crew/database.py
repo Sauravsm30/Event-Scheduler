@@ -87,6 +87,7 @@ class DBSchedule(Base):
     id = Column(String(36), primary_key=True, index=True)
     data = Column(Text)
     timestamp = Column(String(255))
+    is_approved = Column(Boolean, default=False)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
