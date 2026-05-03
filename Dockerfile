@@ -8,13 +8,29 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies using standard pip
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn "crewai[tools]<1.0.0" passlib[bcrypt] pyjwt "pymysql>=1.1.2" "python-jose[cryptography]" python-multipart "sqlalchemy>=2.0.46" python-dotenv langchain-google-genai "numpy<2"
+
+# Enable bytecode compilation for faster startup
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies using uv (creates /app/.venv)
+RUN uv sync --frozen --no-install-project --no-dev
 
 # Copy application source code
 COPY ./src /app/src
 COPY .env /app/.env
+
+# Install the project itself
+RUN uv sync --frozen --no-dev
+
+# Place the virtual environment in the PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose port
 EXPOSE 8000
