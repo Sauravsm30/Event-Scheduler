@@ -9,7 +9,7 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const [programs, setPrograms] = useState([]);
     const [showCreate, setShowCreate] = useState(false);
-    const [newProgram, setNewProgram] = useState({ name: '', start_date: '', end_date: '' });
+    const [newProgram, setNewProgram] = useState({ name: '', start_date: '', end_date: '', is_24_hour_event: false, daily_start_time: '', daily_end_time: '' });
 
     useEffect(() => {
         fetchPrograms();
@@ -27,9 +27,17 @@ const Dashboard = () => {
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/api/programs', newProgram);
+            const payload = { ...newProgram };
+            if (payload.is_24_hour_event) {
+                delete payload.daily_start_time;
+                delete payload.daily_end_time;
+            } else {
+                if (!payload.daily_start_time) delete payload.daily_start_time;
+                if (!payload.daily_end_time) delete payload.daily_end_time;
+            }
+            await api.post('/api/programs', payload);
             setShowCreate(false);
-            setNewProgram({ name: '', start_date: '', end_date: '' });
+            setNewProgram({ name: '', start_date: '', end_date: '', is_24_hour_event: false, daily_start_time: '', daily_end_time: '' });
             fetchPrograms(); // Refresh list
         } catch (err) {
             console.error(err);
@@ -77,6 +85,28 @@ const Dashboard = () => {
                                 <label>End Date</label>
                                 <input required type="date" value={newProgram.end_date} onChange={e => setNewProgram({ ...newProgram, end_date: e.target.value })} />
                             </div>
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <input 
+                                    type="checkbox" 
+                                    id="is24hour" 
+                                    checked={newProgram.is_24_hour_event} 
+                                    onChange={e => setNewProgram({ ...newProgram, is_24_hour_event: e.target.checked })} 
+                                    style={{ transform: 'scale(1.2)' }}
+                                />
+                                <label htmlFor="is24hour" style={{ margin: 0, cursor: 'pointer' }}>This is a 24-hour event (no daily start/end times)</label>
+                            </div>
+                            {!newProgram.is_24_hour_event && (
+                                <>
+                                    <div>
+                                        <label>Daily Start Time (Optional)</label>
+                                        <input type="time" value={newProgram.daily_start_time || ''} onChange={e => setNewProgram({ ...newProgram, daily_start_time: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label>Daily End Time (Optional)</label>
+                                        <input type="time" value={newProgram.daily_end_time || ''} onChange={e => setNewProgram({ ...newProgram, daily_end_time: e.target.value })} />
+                                    </div>
+                                </>
+                            )}
                             <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Create Program</button>

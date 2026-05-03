@@ -56,6 +56,10 @@ const ProgramDetails = () => {
     // For editing events
     const [editingEvent, setEditingEvent] = useState(null);
 
+    // For editing program
+    const [showEditProgram, setShowEditProgram] = useState(false);
+    const [editProgramData, setEditProgramData] = useState(null);
+
     useEffect(() => {
         fetchData();
     }, [id]);
@@ -98,6 +102,38 @@ const ProgramDetails = () => {
             if (err.response?.status === 403 || err.response?.status === 404) {
                 navigate('/');
             }
+        }
+    };
+
+    const openEditProgram = () => {
+        setEditProgramData({
+            name: program.name,
+            start_date: program.start_date,
+            end_date: program.end_date,
+            is_24_hour_event: program.is_24_hour_event || false,
+            daily_start_time: program.daily_start_time || '',
+            daily_end_time: program.daily_end_time || ''
+        });
+        setShowEditProgram(true);
+    };
+
+    const handleUpdateProgram = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = { ...editProgramData };
+            if (payload.is_24_hour_event) {
+                delete payload.daily_start_time;
+                delete payload.daily_end_time;
+            } else {
+                if (!payload.daily_start_time) delete payload.daily_start_time;
+                if (!payload.daily_end_time) delete payload.daily_end_time;
+            }
+            await api.put(`/api/programs/${id}`, payload);
+            setShowEditProgram(false);
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            alert("Error updating program.");
         }
     };
 
@@ -239,6 +275,11 @@ const ProgramDetails = () => {
                             <ArrowLeft size={18} />
                         </button>
                         <h1 className="brand" style={{ margin: 0, fontSize: '1.25rem' }}>{program.name}</h1>
+                        {canManage && (
+                            <button className="btn btn-secondary" onClick={openEditProgram} style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}>
+                                Edit Settings
+                            </button>
+                        )}
                     </div>
                     <div>
                         <span style={{ padding: '0.25rem 0.75rem', borderRadius: '99px', backgroundColor: 'rgba(99, 102, 241, 0.2)', color: 'var(--accent-color)', fontWeight: '600', fontSize: '0.85rem' }}>
@@ -249,6 +290,52 @@ const ProgramDetails = () => {
             </nav>
 
             <main className="main-content container">
+
+                {showEditProgram && canManage && (
+                    <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-color)' }}>
+                        <h3>Edit Program Details</h3>
+                        <form onSubmit={handleUpdateProgram} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label>Program Name</label>
+                                <input required type="text" value={editProgramData.name} onChange={e => setEditProgramData({ ...editProgramData, name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label>Start Date</label>
+                                <input required type="date" value={editProgramData.start_date} onChange={e => setEditProgramData({ ...editProgramData, start_date: e.target.value })} />
+                            </div>
+                            <div>
+                                <label>End Date</label>
+                                <input required type="date" value={editProgramData.end_date} onChange={e => setEditProgramData({ ...editProgramData, end_date: e.target.value })} />
+                            </div>
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <input 
+                                    type="checkbox" 
+                                    id="edit24hour" 
+                                    checked={editProgramData.is_24_hour_event} 
+                                    onChange={e => setEditProgramData({ ...editProgramData, is_24_hour_event: e.target.checked })} 
+                                    style={{ transform: 'scale(1.2)' }}
+                                />
+                                <label htmlFor="edit24hour" style={{ margin: 0, cursor: 'pointer' }}>This is a 24-hour event (no daily start/end times)</label>
+                            </div>
+                            {!editProgramData.is_24_hour_event && (
+                                <>
+                                    <div>
+                                        <label>Daily Start Time (Optional)</label>
+                                        <input type="time" value={editProgramData.daily_start_time || ''} onChange={e => setEditProgramData({ ...editProgramData, daily_start_time: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label>Daily End Time (Optional)</label>
+                                        <input type="time" value={editProgramData.daily_end_time || ''} onChange={e => setEditProgramData({ ...editProgramData, daily_end_time: e.target.value })} />
+                                    </div>
+                                </>
+                            )}
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowEditProgram(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                )}
 
                 {canManage && (
                     <>

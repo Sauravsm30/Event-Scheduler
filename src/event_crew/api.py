@@ -270,9 +270,9 @@ async def fetch_program(id: str, db: Session = Depends(get_db), current_user: DB
         raise HTTPException(status_code=404, detail="Program not found")
     return db_program
 
-@app.put("/api/programs/{id}", response_model=Program, tags=["Programs"])
-async def update_program(id: str, program_update: ProgramBase, db: Session = Depends(get_db), role: DBProgramUserRole = Depends(require_organiser)):
-    db_program = db.query(DBProgram).filter(DBProgram.id == id).first()
+@app.put("/api/programs/{program_id}", response_model=Program, tags=["Programs"])
+async def update_program(program_id: str, program_update: ProgramBase, db: Session = Depends(get_db), role: DBProgramUserRole = Depends(require_organiser)):
+    db_program = db.query(DBProgram).filter(DBProgram.id == program_id).first()
     if not db_program:
         raise HTTPException(status_code=404, detail="Program not found")
     
@@ -282,9 +282,9 @@ async def update_program(id: str, program_update: ProgramBase, db: Session = Dep
     db.refresh(db_program)
     return db_program
 
-@app.delete("/api/programs/{id}", tags=["Programs"])
-async def delete_program(id: str, db: Session = Depends(get_db), role: DBProgramUserRole = Depends(require_organiser)):
-    db_program = db.query(DBProgram).filter(DBProgram.id == id).first()
+@app.delete("/api/programs/{program_id}", tags=["Programs"])
+async def delete_program(program_id: str, db: Session = Depends(get_db), role: DBProgramUserRole = Depends(require_organiser)):
+    db_program = db.query(DBProgram).filter(DBProgram.id == program_id).first()
     if not db_program:
         raise HTTPException(status_code=404, detail="Program not found")
     db.delete(db_program)
